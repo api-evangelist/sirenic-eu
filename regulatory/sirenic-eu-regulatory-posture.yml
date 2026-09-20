@@ -1,0 +1,53 @@
+generated: '2026-09-19'
+method: searched
+probe: true
+sources_checked:
+- https://api.sirenic.eu/confidentialite (200, last updated 2 September 2026)
+- https://api.sirenic.eu/mentions-legales (200)
+- https://api.sirenic.eu/.well-known/security.txt (200)
+- https://api.sirenic.eu/robots.txt (200, Content-Signal)
+- https://api.sirenic.eu/accessibility, /accessibilite, /legal/subprocessors, /legal/dpa, /security, /privacy, /terms
+  (all 404)
+signals:
+  data_subject_request:
+    url: https://api.sirenic.eu/confidentialite
+    contact: rgpd@sirenic.eu
+    stated_period: au plus tard sous 30 jours
+    note: Published GDPR rights procedure (opposition, access, rectification, erasure, restriction) with a dedicated
+      address, a 30-day handling commitment, pointers to exercise rights at source (INSEE Sirene diffusion status
+      / INPI) and to the CNIL. No API endpoint.
+  incident_notification:
+    url: https://api.sirenic.eu/confidentialite
+    stated_sla: nous notifions la CNIL dans les 72 heures et, si le risque est élevé, les personnes concernées
+    note: Verbatim from the Sécurité section of the privacy policy — a breach-notification commitment to the regulator
+      and, for high risk, to data subjects.
+  subprocessors:
+    url: https://api.sirenic.eu/confidentialite
+    named:
+    - name: Anthropic
+      purpose: LLM extraction for /v1/entreprise/{siren}/capital (public RNE deed PDF) and /v1/entreprise/{siren}/sante
+        (company-level figures only, no natural-person names)
+      location: United States
+      transfer_basis: Anthropic DPA incorporating the European Commission SCCs; API documents not used for training
+    - name: Stripe
+      purpose: card payments and invoicing for prepaid credits
+    - name: OVHcloud (OVH SAS, Roubaix, France)
+      purpose: hosting (mentions légales)
+    note: 'Not a dated subprocessor TABLE: the processors are named in prose in the privacy policy (Anthropic under
+      its own heading "Sous-traitant d''analyse documentaire et transfert hors Union européenne", Stripe under account
+      data) and the host in the legal notice. Recorded because the substance — who, for what, where, on what transfer
+      basis — is published; flagged as prose rather than a register.'
+absent:
+  sbom: no /security/sbom, no SBOM link anywhere probed
+  support_lifetime: no versioning/support-period page
+  accessibility_conformance: /accessibility and /accessibilite 404; no VPAT
+  training_data_summary: none (the provider consumes an LLM; it does not train one)
+  ai_transparency: the privacy policy discloses which two routes call an LLM and what is sent — a disclosure, but
+    not an AI Act Art. 50 style transparency page; not credited
+  global_privacy_control: no GPC statement (the service sets no tracking cookie and states it, but does not mention
+    GPC)
+  data_residency: hosting in France is disclosed (OVHcloud) but no residency commitment page
+  age_assurance: n/a
+  notice_and_action: security.txt invites data-error reports by e-mail; not a DSA notice-and-action page
+  transparency_report: none
+  exit_assistance: none

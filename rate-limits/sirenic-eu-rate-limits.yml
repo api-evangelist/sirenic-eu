@@ -1,0 +1,58 @@
+specification: API Commons Rate Limits
+specificationVersion: '0.1'
+provider: Sirenic
+providerId: sirenic-eu
+created: '2026-09-19'
+modified: '2026-09-19'
+generated: '2026-09-19'
+method: searched
+sources:
+- https://api.sirenic.eu/llms.txt
+- https://api.sirenic.eu/openapi.json (429 on /v1/suggestions)
+- https://api.sirenic.eu/.well-known/mcp.json (api_key_alternative.free_quota)
+description: 'Sirenic publishes no per-key or per-account request limit on paid /v1 routes — the pay-per-call price
+  is the throttle, and the docs say so ("The paid GET /v1/recherche has no such quota"). Two published limits exist:
+  a per-IP quota on the free autocomplete route, and the monthly free-call allowance of a verified account. The
+  x402 quote itself carries maxTimeoutSeconds 120.'
+limit_count: 2
+headers:
+  credits_charged: X-Credits-Charged
+  credits_remaining: X-Credits-Remaining
+  payment_required: PAYMENT-REQUIRED (402, x402 v2)
+  payment_signature: PAYMENT-SIGNATURE (request)
+  response_signature: X-Sirenic-Signature (+ key id and timestamp headers, Ed25519 over sirenic-v1:kid:timestamp:sha256_b64(body))
+  retry_after: null
+  x_ratelimit: null
+  note: No RateLimit-*/X-RateLimit-*/Retry-After headers are documented. The runtime signal an agent has is the
+    429 status on /v1/suggestions and the credit headers on key-paid calls.
+responseCodes:
+  throttled: 429
+  payment_required: 402
+limits:
+- name: Free company-name autocomplete (GET /v1/suggestions) — daily
+  scope: ip
+  metric: requests_per_day
+  limit: 2000
+  timeFrame: day
+  status_on_exhaustion: 429
+  source: openapi 429 description; llms.txt
+- name: Free company-name autocomplete (GET /v1/suggestions) — burst
+  scope: ip
+  metric: requests_per_minute
+  limit: 60
+  timeFrame: minute
+  status_on_exhaustion: 429
+  source: openapi 429 description
+allowances:
+- name: Verified-account free calls
+  scope: account
+  limit: 150
+  timeFrame: month
+  applies_to: routes priced ≤ $0.05
+  source: llms.txt; mcp.json api_key_alternative.free_quota
+  note: The Gemini extension README says 100 calls/month on routes ≤ $0.01 — an older figure; llms.txt and mcp.json
+    (both live on 2026-09-19) say 150 on ≤ $0.05.
+client_side_caps:
+  note: x402 clients since @x402/core 2.23 refuse any quote above $1.00 per payment by default (spendControls.maxAmountPerPayment);
+    the only Sirenic quotes that can exceed it are full-size /v1/kyb/batch (up to $10.50) and /v1/surveillance/creer
+    or …/renouveler (up to $50.00).

@@ -1,0 +1,44 @@
+# Sirenic — API de données d'entreprises pour agents.
+# Tout est public et gratuit à lire ; seules les routes /v1 sont payantes (x402).
+
+# Signaux de contenu (Content Signals Policy, CC0 — https://contentsignals.org/) :
+# (a) content-signal = yes : usage autorisé.
+# (b) content-signal = no  : usage non autorisé.
+# (c) signal absent : ni accordé, ni refusé.
+# search   : indexation et résultats de recherche (liens + courts extraits).
+# ai-input : alimentation de modèles en temps réel (RAG, grounding).
+# ai-train : entraînement ou affinage de modèles.
+# Sirenic autorise les trois. Le signal n'ACCORDE rien de neuf : il explicite
+# ce que les groupes User-agent ci-dessous disent déjà en autorisant nommément
+# GPTBot, ClaudeBot & consorts.
+
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+# Robots d'assistants : explicitement bienvenus.
+User-agent: GPTBot
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+User-agent: ClaudeBot
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+User-agent: Claude-Web
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+User-agent: PerplexityBot
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+User-agent: Google-Extended
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+User-agent: Applebot-Extended
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+Sitemap: https://api.sirenic.eu/sitemap.xml

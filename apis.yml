@@ -1,18 +1,119 @@
 aid: sirenic-eu
 name: Sirenic
-description: 'Sirenic is a company surfaced via the API Evangelist harvest backlog (source: a2a-registry)
-  and added to the network as a stub for full-pipeline profiling.'
+description: Sirenic is a French pay-per-call API for official company data across France and Europe, built for AI agents. It serves company search and profiles by SIREN/SIRET from INSEE Sirene and INPI RNE, establishments, officers, filed accounts and ratios, BODACC legal alerts, a default-risk score, sanctions screening against six official lists, KYB dossiers, live VIES VAT and IBAN checks with a ready-to-invoice verdict for the 2026 French e-invoicing mandate, public-procurement records, watchlists with Ed25519-signed webhooks, and profiles, accounts and events from thirteen European registers plus LEI/GLEIF groups. Every /v1 route is a GET priced per call ($0.002 to $1.00) and paid either through the x402 protocol in USDC or EURC on Base with no account, or with an srn_live_ API key and prepaid euro credits. It publishes an OpenAPI 3.1, llms.txt, an RFC 9727 api-catalog, an MCP server, an A2A agent card, x402 discovery and OAuth metadata from api.sirenic.eu.
 url: https://raw.githubusercontent.com/api-evangelist/sirenic-eu/refs/heads/main/apis.yml
 x-type: company
 x-source: harvest:a2a-registry
-x-tier: stub
-x-tier-reason: harvest
+x-tier: full
+x-tier-reason: enriched 2026-09-19 (local-v3)
 specificationVersion: '0.20'
 created: '2026-09-19'
 modified: '2026-09-19'
 tags:
+- Company Data
+- Business Registry
+- KYB
+- Know Your Business
+- Sanctions Screening
+- Financial Data
+- Credit Risk
+- VAT Validation
+- IBAN Validation
+- E-Invoicing
+- Public Procurement
+- Open Data
+- France
+- Europe
+- x402
+- Agentic Commerce
+- MCP
+- A2A
 - Company
-apis: []
+apis:
+- name: Sirenic API
+  description: 'Pay-per-call REST API for official French and European company data: company search and profiles by SIREN/SIRET (INSEE Sirene, INPI RNE), establishments, officers, annual accounts, BODACC legal alerts, default scoring, sanctions screening, KYB dossiers, VAT (VIES) and IBAN checks, e-invoicing readiness, public procurement, and 13 European registers plus LEI/GLEIF. Every /v1 route is GET and paid per call in USDC or EURC via the x402 protocol (HTTP 402) or with an srn_live_ API key and prepaid credits.'
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Company Data
+  - KYB
+  - Business Registry
+  - Sanctions Screening
+  - x402
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-openapi.yml
+  - type: OpenAPI
+    url: https://api.sirenic.eu/openapi.json
+    name: Provider-hosted OpenAPI 3.1 (source of openapi/)
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Overlay
+    url: overlays/sirenic-eu-openapi-overlay.yaml
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- name: Sirenic MCP Server
+  description: 'Remote Model Context Protocol server (streamable HTTP) over the same official French and European company-data routes: 77 tools such as search_french_companies, get_french_company_kyb_file, screen_sanctions_lists and prepare_french_invoice_file. Anonymous connect at /mcp — every tool returns an x402 quote until called with a signed payment or an srn_live_ API key; an OAuth 2.0 connector variant at /mcp/connecteur (authorization code + PKCE, dynamic client registration, scope mcp) bills the account''s free quota then prepaid credits.'
+  humanURL: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/mcp-setup.md
+  baseURL: https://api.sirenic.eu/mcp
+  tags:
+  - MCP
+  - Company Data
+  - KYB
+  - x402
+  properties:
+  - type: MCPServer
+    url: mcp/sirenic-eu-mcp.yml
+  - type: MCPManifest
+    url: well-known/sirenic-eu-mcp.json
+    name: /.well-known/mcp.json (verbatim)
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+  - type: Documentation
+    url: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/mcp-setup.md
+- name: Sirenic A2A Agent
+  description: 'Agent2Agent JSON-RPC endpoint exposing the 116 paid routes as A2A skills (skill ids are the OpenAPI path templates) with the a2a-x402 v0.1 payment extension: a first SendMessage returns an input-required task carrying the x402 quote; the signed PaymentPayload goes back on the same task and the data arrives as a task artifact. Card served at /.well-known/agent-card.json (and the legacy /.well-known/agent.json), graded conformant.'
+  humanURL: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/a2a.ts
+  baseURL: https://api.sirenic.eu/a2a
+  tags:
+  - A2A
+  - Agents
+  - Company Data
+  - x402
+  properties:
+  - type: AgentCard
+    url: a2a/sirenic-eu-a2a.yml
+  - type: AgentCard
+    url: a2a/sirenic-eu-agent-card.json
+    name: agent-card.json (verbatim)
+  - type: Documentation
+    url: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/a2a.ts
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -21,3 +122,97 @@ maintainers:
 common:
 - type: Website
   url: https://sirenic.eu/
+- type: DeveloperPortal
+  url: https://api.sirenic.eu/
+- type: Documentation
+  url: https://api.sirenic.eu/api
+- type: APIReference
+  url: https://api.sirenic.eu/api
+- type: GettingStarted
+  url: https://github.com/sirenic-eu/sirenic-examples
+- type: GitHubOrganization
+  url: https://github.com/sirenic-eu
+- type: PrivacyPolicy
+  url: https://api.sirenic.eu/confidentialite
+- type: LegalNotice
+  url: https://api.sirenic.eu/mentions-legales
+- type: Support
+  url: mailto:contact@sirenic.eu
+  name: 'contact@sirenic.eu (security.txt Contact; GDPR: rgpd@sirenic.eu)'
+- type: LLMsTxt
+  url: llms/sirenic-eu-llms.txt
+- type: LLMsTxt
+  url: https://api.sirenic.eu/llms.txt
+  name: provider-hosted llms.txt
+- type: WellKnown
+  url: well-known/sirenic-eu-well-known.yml
+- type: APICatalog
+  url: well-known/sirenic-eu-api-catalog.json
+  name: /.well-known/api-catalog (RFC 9727, verbatim)
+- type: SecurityTxt
+  url: well-known/sirenic-eu-security.txt
+- type: ContentSignal
+  url: well-known/sirenic-eu-robots.txt
+  name: 'robots.txt with Content-Signal: search=yes, ai-input=yes, ai-train=yes'
+- type: OAuthAuthorizationServer
+  url: well-known/sirenic-eu-oauth-authorization-server.json
+- type: OAuthProtectedResource
+  url: well-known/sirenic-eu-oauth-protected-resource.json
+- type: X402
+  url: well-known/sirenic-eu-x402.json
+  name: /.well-known/x402 discovery document (v2, resource-server)
+- type: Packages
+  url: packages/sirenic-eu-packages.yml
+- type: SDKs
+  url: packages/sirenic-eu-packages.yml
+- type: MCPServer
+  url: mcp/sirenic-eu-mcp.yml
+- type: AgentCard
+  url: a2a/sirenic-eu-a2a.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Authentication
+  url: authentication/sirenic-eu-authentication.yml
+- type: OAuthScopes
+  url: scopes/sirenic-eu-scopes.yml
+- type: Conformance
+  url: conformance/sirenic-eu-conformance.yml
+- type: Compliance
+  url: conformance/sirenic-eu-conformance.yml
+  name: GDPR posture, Etalab 2.0 licence, RFC 8414/9728/9727/9116 + x402/MCP/A2A conformance
+- type: ErrorCatalog
+  url: errors/sirenic-eu-problem-types.yml
+- type: Lifecycle
+  url: lifecycle/sirenic-eu-lifecycle.yml
+- type: Conventions
+  url: conventions/sirenic-eu-conventions.yml
+- type: RateLimits
+  url: rate-limits/sirenic-eu-rate-limits.yml
+- type: Plans
+  url: plans/sirenic-eu-plans-pricing.yml
+- type: Sandbox
+  url: sandbox/sirenic-eu-sandbox.yml
+- type: DataModel
+  url: data-model/sirenic-eu-data-model.yml
+- type: Webhooks
+  url: asyncapi/sirenic-eu-webhooks.yml
+- type: AgenticAccess
+  url: agentic-access/sirenic-eu-agentic-access.yml
+- type: ToolCrosswalk
+  url: mcp/sirenic-eu-tool-crosswalk.yml
+- type: RegulatoryPosture
+  url: regulatory/sirenic-eu-regulatory-posture.yml
+- type: DataSubjectRequest
+  url: https://api.sirenic.eu/confidentialite
+- type: IncidentNotification
+  url: https://api.sirenic.eu/confidentialite
+- type: Subprocessors
+  url: https://api.sirenic.eu/confidentialite
+- type: Overlay
+  url: overlays/sirenic-eu-openapi-overlay.yaml
+x-enrichment:
+  date: '2026-09-19'
+  status: enriched
+  artifacts_added: 31
+  pass: local-v3
+x-enrichment-notes: 'Second probe round (pricing /offres, /compte, /articles, logo.png, /.well-known/agent-skills/index.json, /mcp/server-card, /.well-known/ai-catalog.json, MCP tools/list, 402 headers, domain-security + security-program probes) was blocked: api.sirenic.eu refused TCP from the probing IP for the remainder of the run after the first burst of fetches. Pointers for Pricing/SignUp/Blog/image were deliberately NOT emitted unverified. Re-run the probe round to complete.'

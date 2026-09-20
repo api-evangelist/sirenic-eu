@@ -1,0 +1,76 @@
+generated: '2026-09-19'
+method: searched
+source: openapi/sirenic-eu-openapi.yml securitySchemes, enriched from llms.txt ("PAY WITH AN API KEY INSTEAD OF
+  x402"), the RFC 8414/9728 discovery documents and the privacy policy MCP-connector section.
+summary:
+  types:
+  - x402 payment (no credential)
+  - apiKey
+  - http bearer
+  - oauth2 (MCP connector only)
+  api_key_in:
+  - header
+schemes:
+- name: ApiKeyAuth
+  type: apiKey
+  in: header
+  parameter: X-Api-Key
+  description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402).
+    Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional:
+    without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants}
+    WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+  sources:
+  - openapi/sirenic-eu-openapi.yml
+- name: BearerAuth
+  type: http
+  scheme: bearer
+  description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key
+    is ignored (x402 flow unchanged).'
+  sources:
+  - openapi/sirenic-eu-openapi.yml
+- name: McpConnectorOAuth
+  type: oauth2
+  applies_to: https://api.sirenic.eu/mcp/connecteur (MCP over OAuth, for assistants) — not the REST API
+  flows:
+    authorizationCode:
+      authorizationUrl: https://api.sirenic.eu/compte/connecteur
+      tokenUrl: https://api.sirenic.eu/oauth/jeton
+      refreshUrl: https://api.sirenic.eu/oauth/jeton
+      scopes:
+        mcp: call the data routes on behalf of the account holder
+  pkce: S256 required
+  dynamic_client_registration: https://api.sirenic.eu/oauth/enregistrement (RFC 7591) + client_id_metadata_document_supported
+  sources:
+  - well-known/sirenic-eu-oauth-authorization-server.json
+  - well-known/sirenic-eu-oauth-protected-resource.json
+- name: X402Payment
+  type: x402
+  in: header
+  parameter: PAYMENT-SIGNATURE
+  description: 'x402 v2 (kind resource-server) — discovery document at /.well-known/x402 lists every priced resource
+    with its accepts[] (scheme exact, network eip155:8453, asset USDC 0x8335…2913 or EURC 0x60a3…db42, payTo 0x76A672EEe56D29D475b0715cc03B8C99D70EC8A2,
+    maxTimeoutSeconds 120). Not an authentication scheme in the OpenAPI sense (security: [{}] allows anonymous),
+    but it is the default access rail.'
+  sources:
+  - well-known/sirenic-eu-x402.json
+  - llms/sirenic-eu-llms.txt
+docs:
+- https://api.sirenic.eu/llms.txt
+- https://api.sirenic.eu/openapi.json
+- https://api.sirenic.eu/.well-known/oauth-authorization-server
+- https://api.sirenic.eu/confidentialite
+access_model:
+  default: No credential. Any /v1 GET without payment answers 402 with an x402 v2 quote (body + PAYMENT-REQUIRED
+    header); the client signs it (USDC or EURC on Base, eip155:8453) and retries with PAYMENT-SIGNATURE. Non-2xx
+    responses are never settled.
+  api_key: 'X-Api-Key: srn_live_… or Authorization: Bearer srn_live_… — prepaid credits (1 credit = 1 EUR, packs
+    10/20/50/100 EUR, valid 12 months, closest-to-expiry spent first). Response carries X-Credits-Charged and X-Credits-Remaining.
+    Insufficient balance → 402 {error: credits_insuffisants} without an x402 quote. A signed x402 payment takes
+    precedence over a key.'
+  free_tier: '150 calls/month on routes priced ≤ $0.05 with a verified account (llms.txt / mcp.json). Free routes
+    need nothing: /v1/suggestions, /v1/reperer, /v1/lecture, /v1/provenance/registres, /v1/demo/entreprise, /preview/…,
+    /healthz.'
+  account_gated: GET /v1/documents/{type}/{id} with type=actes requires an identified account (401 otherwise) since
+    2026-09-19 — legal deeds carry personal data.
+  key_storage: Keys and tokens are stored only as SHA-256 fingerprints; the customer area uses magic-link e-mail
+    login, no password (privacy policy, Sécurité).

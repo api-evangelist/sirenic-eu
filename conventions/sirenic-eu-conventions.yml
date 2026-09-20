@@ -1,0 +1,148 @@
+generated: '2026-09-19'
+method: searched
+source: https://api.sirenic.eu/llms.txt (How to use, What you are charged for, Spend controls, free endpoints, signed
+  responses), https://api.sirenic.eu/openapi.json (info.description, securitySchemes, per-route descriptions), the
+  x402 / mcp.json manifests, n8n-nodes-sirenic signature.ts.
+description: 'How the Sirenic API behaves across all 125 operations: a GET-only, JSON, pay-per-call surface where
+  payment (x402 or prepaid credits) replaces authentication, every successful body is Ed25519-signed and carries
+  per-block provenance, and failure is never billed.'
+base_url: https://api.sirenic.eu
+api_style: 'REST over HTTPS, GET only (any other method → 405 Allow: GET, OPTIONS), JSON responses (two routes return
+  application/pdf)'
+authentication:
+  scheme: none by default — x402 payment per call; or X-Api-Key / Bearer srn_live_ with prepaid credits; OAuth only
+    for the MCP connector
+  detail: authentication/sirenic-eu-authentication.yml
+  docs: https://api.sirenic.eu/llms.txt
+payment:
+  protocol: x402 v2
+  flow: GET without payment → 402 + PAYMENT-REQUIRED quote → sign (USDC/EURC, Base) → retry with PAYMENT-SIGNATURE
+    → 2xx released once the facilitator confirms settlement
+  precedence: a signed x402 payment always wins over an API key
+  billing_rule: non-2xx never charged; payment cancelled before settlement
+  per_unit_routes:
+  - /v1/kyb/batch ($0.105 × SIREN)
+  - /v1/comparer ($0.12 × SIREN)
+  - /v1/surveillance/creer and …/renouveler (unit × targets × duration)
+  - /v1/entreprise/{siren}/dossier (sum of blocks, capped $0.35)
+  discovery: well-known/sirenic-eu-x402.json
+idempotency:
+  supported: false
+  coverage: none
+  mechanism: null
+  applies_to: 122 of 125 operations are pure reads (GET, no server-side effect); the 3 mutating routes are GET /v1/surveillance/creer
+    (creates a paid watch), …/{jeton}/renouveler (extends, paid) and …/{jeton}/arreter (stops + purges, free). None
+    documents an Idempotency-Key or client request id, so a retried creer/renouveler after a network failure can
+    create or extend twice — each retry needs a fresh x402 quote/signature, which is the only de-facto replay guard,
+    and the docs state "no refund".
+  scope:
+  - GET /v1/surveillance/creer
+  - GET /v1/surveillance/{jeton}/renouveler
+  - GET /v1/surveillance/{jeton}/arreter
+  docs: https://api.sirenic.eu/openapi.json (/v1/surveillance/creer)
+  note: Read routes are idempotent by construction; the verdict is about the write surface only.
+dry_run:
+  supported: true
+  mode: quote-only
+  mechanism: Any paid route called without payment/key returns the exact x402 quote (price, asset, payTo) at no
+    cost; MCP tools return it in structuredContent.quote when x_payment is omitted; GET /v1/reperer?texte= returns
+    the recommended call WITH its price; the n8n node exposes a Dry Run option (would_pay_usd). Prices are also
+    static in the OpenAPI x-price.
+  applies_to: every paid operation, including the three watchlist writes
+  docs: https://api.sirenic.eu/llms.txt
+reversibility:
+  grade: documented
+  write_surface:
+  - operation: GET /v1/surveillance/creer
+    overlay_operationId: getSurveillanceCreer
+    reversal: GET /v1/surveillance/{jeton}/arreter
+    reversal_operationId: getSurveillanceByJetonArreter
+    effect: stops the watch and purges targets and events immediately (free)
+    window: any time while the token is valid — but the payment is NOT refunded ("No account, no refund" in the
+      route description); the reversal undoes the surveillance, not the spend
+    docs: https://api.sirenic.eu/openapi.json (/v1/surveillance/creer, /v1/surveillance/{jeton}/arreter)
+  - operation: GET /v1/surveillance/{jeton}/renouveler
+    overlay_operationId: getSurveillanceByJetonRenouveler
+    reversal: GET /v1/surveillance/{jeton}/arreter
+    window: same as above; renewal itself is only possible before the post-expiry grace period ends (410 afterwards)
+      — the grace-period length is not stated
+    docs: https://api.sirenic.eu/openapi.json
+  - operation: GET /v1/surveillance/{jeton}/arreter
+    reversal: null
+    window: null
+    note: 'irreversible: purges data; a new watch would be a new paid creer'
+  reads: 122 read-only operations — reversibility na
+  payments: x402 settlements are on-chain and final; the provider's reversibility promise is instead that a failed
+    call is never settled (cancelled before transfer, "nothing to refund")
+  note: 'Graded documented (0.4): a reversal path exists and is free, but no refund window is stated because there
+    is none — the spend is final. Not graded verified because the only stated windows (12-month credit validity,
+    30/90/365-day watch durations, unstated renewal grace period) are not reversal windows.'
+pagination:
+  style: page-based on two routes; bounded arrays elsewhere
+  request_params:
+    page: /v1/prospection (100 companies per page, each page one payment, stable SIREN order, page_suivante flag);
+      /v1/marches/expirations (50 contracts per page)
+  response_fields:
+    page_suivante: boolean
+    total_results: on search
+  bounded_lists: search top 10, suggestions top 5, watch events last 100, designs 100 per call
+  docs: https://api.sirenic.eu/openapi.json
+field_expansion:
+  supported: true
+  mechanism: blocs= on GET /v1/entreprise/{siren}/dossier — comma-separated blocks (etablissements, alertes_bodacc,
+    contentieux, finances, marches_publics, marches_publics_ue, lobbying, risques_industriels, agrements, pi, documents,
+    facturation_prep, score); each block priced as its own route, total capped at $0.35; unserved blocks named in
+    blocs_absents with a closed-list reason
+  docs: https://api.sirenic.eu/api/dossier-entreprise-blocs-ne-payez-que-ce-que-vous-lisez
+metadata:
+  supported: false
+  note: no client metadata field; the API is stateless apart from watchlists
+request_tracing:
+  request_id_header: null
+  response_signature: X-Sirenic-Signature (+ key id and timestamp headers) — detached Ed25519 over sirenic-v1:kid:timestamp:sha256_b64(raw
+    body); public key at /.well-known/sirenic-signing-key; verify then read provenance — lets an agent prove offline
+    what it knew when it paid
+  credit_headers:
+  - X-Credits-Charged
+  - X-Credits-Remaining
+input_leniency:
+  note: 'Search params accept what an agent produces: quotes, punctuation and unsupported characters are stripped,
+    not rejected; "SIREN : 552 032 534", a 14-digit SIRET or an FR VAT number all resolve directly. 400 only when
+    nothing searchable remains.'
+versioning:
+  scheme: URI path
+  current: /v1
+  mechanism: no version header; info.version 1.0.0
+  detail: lifecycle/sirenic-eu-lifecycle.yml
+  docs: https://api.sirenic.eu/openapi.json
+error_envelope:
+  media_type: application/json
+  rfc9457: false
+  shape: '{ "error": <code>, "champ", "message" }; 402 carries the x402 quote; partial success is flagged in-band
+    (resultats_partiels, etages_abandonnes, blocs_absents, provenance[].etat)'
+  detail: errors/sirenic-eu-problem-types.yml
+rate_limits:
+  signal_status: 429
+  scope: free /v1/suggestions only (2,000/day/IP, 60/min); no documented limit on paid routes
+  headers: null
+  detail: rate-limits/sirenic-eu-rate-limits.yml
+webhooks:
+  signing_header: X-Sirenic-Signature
+  verification: Ed25519 detached signature, same recipe as API responses; retries 3× over ~33 s, next-day redelivery
+    with a fresh timestamp
+  detail: asyncapi/sirenic-eu-webhooks.yml
+localisation:
+  note: 'Routes, parameters and field names are French (recherche, entreprise, dirigeants, comptes); descriptions
+    bilingual FR/EN; HTML guides served in FR and EN with hreflang, and in Markdown via .md suffix or Accept: text/markdown'
+other_conventions:
+- name: Provenance envelope
+  detail: every paid JSON response since 2026-09-06 carries provenance[] with source_code, licence, version, as_of,
+    precision_as_of (publication_officielle | ingestion | consultation | indisponible), etat (servi | absence_mesuree
+    | absence_non_conclusive | partiel | perime | indisponible | sans_objet), couverture and confiance; dictionaries
+    free at /v1/provenance/registres and /v1/lecture
+- name: Absence semantics
+  detail: only absence_mesuree asserts an absence; "no sanctions match" and "the list could not be read" are different
+    answers
+- name: Personal data minimisation
+  detail: officers exposed as name, role, birth year only; partial-diffusion companies return the minimal legal
+    record; free text removed where it names court-appointed administrators

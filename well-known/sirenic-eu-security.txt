@@ -1,0 +1,9 @@
+Contact: mailto:contact@sirenic.eu
+Expires: 2027-09-04T00:00:00.000Z
+Preferred-Languages: fr, en
+Canonical: https://api.sirenic.eu/.well-known/security.txt
+Policy: https://api.sirenic.eu/about
+# Signaler un défaut de donnée, de facturation ou de sécurité : un mail suffit,
+# avec l'URL appelée, le SIREN ou l'identifiant, et ce qui vous semble faux.
+# Report a data, billing or security issue by e-mail: the URL you called, the
+# identifier, and what looks wrong.

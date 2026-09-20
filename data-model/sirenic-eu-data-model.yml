@@ -1,0 +1,138 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/sirenic-eu-openapi.yml path hierarchy and response examples (components.schemas is EMPTY in the
+  provider spec, so there are no $ref links to walk; relationships are read from path parameters and the example
+  bodies), llms.txt "What you get back", examples/responses/*.json in sirenic-eu/sirenic-examples.
+identifiers:
+- entity: Entreprise (FR)
+  id: siren
+  format: 9 digits, Luhn
+  example: '552032534'
+- entity: Etablissement (FR)
+  id: siret
+  format: 14 digits = siren + 5-digit NIC
+  example: '55203253400703'
+- entity: Association (FR)
+  id: rna
+  format: W + 9 digits
+- entity: European company
+  id: pays + national id
+  format: ISO 3166-1 alpha-2 + registry number (BE id, CH id, GB company_number, NO id, EE registrikood, LV regnr,
+    LT kodas, HR oib, CZ/SK ico, PL krs/nip, RO cui, IE numero, CY id, SE orgnr, DK cvr, ES hoja/nif, PT nipc)
+- entity: Group
+  id: lei
+  format: ISO 17442, 20 chars (GLEIF)
+- entity: Watchlist
+  id: jeton
+  format: sw_<uuid>.<timestamp>.<Ed25519 sig>
+- entity: Document
+  id: type + id
+  format: type ∈ {actes, bilans}; id from /v1/entreprise/{siren}/documents
+- entity: Sector
+  id: code_naf
+  format: NAF/APE code
+- entity: Public buyer
+  id: siret
+entities:
+- Entreprise
+- Etablissement
+- Dirigeant
+- Exercice (finances)
+- AnnonceBODACC
+- Contentieux
+- AccordCollectif
+- MarchePublic
+- Acheteur
+- Capital/Associe
+- ProprieteIntellectuelle
+- Document
+- Score defaillance
+- Sanction match
+- Agrement
+- RisqueIndustriel
+- Emploi (hiring signals)
+- Association
+- AnnonceJOAFE
+- Surveillance
+- Evenement
+- EntrepriseEU
+- ComptesEU
+- EvenementEU
+- InsolvabiliteEU
+- DirigeantEU
+- BeneficiaireEffectif (GB)
+- Provenance block
+relationships:
+- from: Entreprise
+  to: Etablissement
+  type: has_many
+  via: GET /v1/entreprise/{siren}/etablissements (siret startswith siren)
+- from: Entreprise
+  to: Dirigeant
+  type: has_many
+  via: dirigeants[] in /v1/entreprise/{siren}; reverse lookup GET /v1/dirigeant/recherche?nom=
+- from: Entreprise
+  to: Exercice
+  type: has_many
+  via: GET /v1/entreprise/{siren}/finances → exercices[] (date_cloture)
+- from: Entreprise
+  to: AnnonceBODACC
+  type: has_many
+  via: /alertes, /changements?depuis=, GET /v1/bodacc/recherche
+- from: Entreprise
+  to: Document
+  type: has_many
+  via: /documents → GET /v1/documents/{type}/{id}
+- from: Entreprise
+  to: MarchePublic
+  type: has_many
+  via: /marches-publics, /marches-publics-ue; buyer side GET /v1/acheteur/{siret}/profil
+- from: Entreprise
+  to: Group (LEI)
+  type: belongs_to
+  via: groupe_lei on every profile (GLEIF level-2 parents or declared reason for none)
+- from: Entreprise
+  to: Score defaillance
+  type: has_one
+  via: GET /v1/score/defaillance/{siren}; also embedded in /kyb, /comparer, /sante
+- from: Entreprise
+  to: Sector benchmark
+  type: belongs_to
+  via: activite_principale → GET /v1/secteur/{code_naf}/benchmarks
+- from: KYB dossier
+  to: Entreprise
+  type: composes
+  via: GET /v1/kyb/{siren} = identite + dirigeants + alertes_bodacc + finances + criblage_sanctions + tva; GET /v1/entreprise/{siren}/dossier?blocs=
+    picks blocks
+- from: Surveillance
+  to: Entreprise | Dirigeant | Association
+  type: has_many (targets)
+  via: cibles= at creation (SIREN, RNA, dirigeant:Name)
+- from: Surveillance
+  to: Evenement
+  type: has_many
+  via: GET /v1/surveillance/{jeton} (last 100) and signed webhook batches
+- from: Association
+  to: AnnonceJOAFE
+  type: has_many
+  via: GET /v1/association/{rna}/annonces
+- from: EntrepriseEU
+  to: ComptesEU
+  type: has_many
+  via: /v1/eu/entreprise/{pays}/{id}/comptes → /comptes/{reference|date_cloture}
+- from: EntrepriseEU
+  to: DirigeantEU | EvenementEU | InsolvabiliteEU | Etablissement
+  type: has_many
+  via: country sub-routes (NO, GB, LV, EE, HR, RO, CH, FI, CY, DK, CZ, PL, LT, IE)
+- from: Every paid response
+  to: Provenance block
+  type: has_many
+  via: provenance[] (source_code, licence, version, as_of, precision_as_of, etat, couverture, confiance) — codes
+    resolved at GET /v1/provenance/registres
+response_envelope:
+  common_fields:
+  - source
+  - disclaimer
+  - data_freshness
+  - provenance[]
+  note: Ed25519-signed bodies; see conventions/sirenic-eu-conventions.yml

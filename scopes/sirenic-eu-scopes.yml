@@ -1,0 +1,47 @@
+generated: '2026-09-19'
+method: probed
+source: https://api.sirenic.eu/.well-known/oauth-authorization-server (RFC 8414) and /.well-known/oauth-protected-resource
+  (RFC 9728)
+docs: https://api.sirenic.eu/confidentialite (section "Le connecteur MCP et l'autorisation OAuth")
+note: 'OAuth 2.0 exists for ONE surface: the MCP connector at https://api.sirenic.eu/mcp/connecteur used by Gemini
+  CLI / Claude / ChatGPT style assistants. The REST API itself is not OAuth — it is x402 pay-per-call or an X-Api-Key.
+  The OpenAPI declares no oauth2 securityScheme, so derive-oauth-scopes.py produced nothing; this file is read from
+  the live discovery documents.'
+authorization_server:
+  issuer: https://api.sirenic.eu
+  authorization_endpoint: https://api.sirenic.eu/compte/connecteur
+  token_endpoint: https://api.sirenic.eu/oauth/jeton
+  registration_endpoint: https://api.sirenic.eu/oauth/enregistrement
+  revocation_endpoint: https://api.sirenic.eu/oauth/revoquer
+  grant_types_supported:
+  - authorization_code
+  - refresh_token
+  response_types_supported:
+  - code
+  code_challenge_methods_supported:
+  - S256
+  token_endpoint_auth_methods_supported:
+  - private_key_jwt
+  - none
+  - client_secret_post
+  - client_secret_basic
+  client_id_metadata_document_supported: true
+  dynamic_client_registration: true
+protected_resource:
+  resource: https://api.sirenic.eu
+  resource_name: Sirenic MCP
+  authorization_servers:
+  - https://api.sirenic.eu
+  bearer_methods_supported:
+  - header
+token_lifetimes:
+  access_token: 1 hour
+  refresh_token: expires after 90 days without use
+  source: https://api.sirenic.eu/confidentialite
+scopes:
+- name: mcp
+  description: Call the data routes on behalf of the account holder, against the account's free monthly quota then
+    its prepaid credit balance. Does NOT grant the e-mail address, invoices, or the right to top up or close the
+    account (privacy policy, MCP connector section). The only scope the authorization server advertises.
+  source: scopes_supported in both discovery documents
+scope_count: 1

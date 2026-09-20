@@ -1,0 +1,117 @@
+generated: '2026-09-19'
+method: searched
+source: Live discovery documents saved under well-known/ (RFC 8414, RFC 9728, RFC 9727, RFC 9116, x402 v2, MCP manifest),
+  the A2A agent card, openapi/sirenic-eu-openapi.yml, robots.txt (Content Signals), llms.txt and the privacy policy.
+standards:
+- id: openapi-3.1
+  conforms: true
+  evidence: 'https://api.sirenic.eu/openapi.json — openapi: 3.1.0, 125 operations, parses (openapi/sirenic-eu-openapi.yml)'
+- id: rfc8414-oauth-as-metadata
+  conforms: true
+  evidence: https://api.sirenic.eu/.well-known/oauth-authorization-server — issuer, authorization/token/registration/revocation
+    endpoints, PKCE S256, grant_types authorization_code + refresh_token
+- id: rfc9728-protected-resource-metadata
+  conforms: true
+  evidence: https://api.sirenic.eu/.well-known/oauth-protected-resource — resource https://api.sirenic.eu, authorization_servers
+    [https://api.sirenic.eu], scopes_supported [mcp]
+- id: rfc7591-dynamic-client-registration
+  conforms: true
+  evidence: 'registration_endpoint https://api.sirenic.eu/oauth/enregistrement in the RFC 8414 document; client_id_metadata_document_supported:
+    true'
+- id: rfc7636-pkce
+  conforms: true
+  evidence: code_challenge_methods_supported [S256]
+- id: oauth2
+  conforms: true
+  evidence: authorization-code + refresh flow for the MCP connector (https://api.sirenic.eu/mcp/connecteur); the
+    REST API itself is x402 / API key, not OAuth
+- id: oidc
+  conforms: false
+  evidence: https://api.sirenic.eu/.well-known/openid-configuration → 404; no id_token, no jwks_uri advertised
+- id: rfc9727-api-catalog
+  conforms: true
+  evidence: https://api.sirenic.eu/.well-known/api-catalog served as application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727",
+    with service-desc (OpenAPI), service-doc (llms.txt), status, service-meta and privacy-policy relations
+- id: rfc9116-security-txt
+  conforms: true
+  evidence: https://api.sirenic.eu/.well-known/security.txt — Contact, Expires 2027-09-04, Preferred-Languages,
+    Canonical, Policy
+- id: x402-v2
+  conforms: true
+  evidence: 'https://api.sirenic.eu/.well-known/x402 — x402Version 2, kind resource-server, items[] with accepts[]
+    (scheme exact, network eip155:8453, USDC/EURC on Base); every paid operation carries x-price and x-payment {protocol:
+    x402} in the OpenAPI; 402 + PAYMENT-REQUIRED / PAYMENT-SIGNATURE headers'
+- id: mcp-streamable-http
+  conforms: true
+  evidence: 'https://api.sirenic.eu/.well-known/mcp.json — transport {type: streamable-http, url: https://api.sirenic.eu/mcp};
+    GET /mcp answers 405 (POST-only endpoint)'
+- id: a2a-agent-card
+  conforms: true
+  evidence: https://api.sirenic.eu/.well-known/agent-card.json — graded conformant in a2a/sirenic-eu-a2a.yml; a2a-x402
+    v0.1 payment extension declared
+- id: content-signals
+  conforms: true
+  evidence: 'robots.txt carries Content-Signal: search=yes, ai-input=yes, ai-train=yes for * and named AI crawlers
+    (well-known/sirenic-eu-robots.txt)'
+- id: llms-txt
+  conforms: true
+  evidence: https://api.sirenic.eu/llms.txt (92 KB) — also named as service-doc in the api-catalog and as documentationUrl
+    in the agent card and mcp.json
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: errors are application/json {error, champ, message}; no application/problem+json anywhere in the spec
+- id: pagination
+  conforms: partial
+  evidence: 'page-based on two routes only (/v1/prospection: page, each page one payment, page_suivante flag; /v1/marches/expirations:
+    page, 50 per page); all other list routes return bounded arrays (top 10 / top 5 / last 100)'
+- id: idempotency
+  conforms: false
+  evidence: no Idempotency-Key or equivalent documented; the surface is GET-only and the three state-changing routes
+    (surveillance creer/renouveler/arreter) document no replay protection beyond payment settlement
+- id: rfc8594-deprecation-sunset
+  conforms: false
+  evidence: no Deprecation/Sunset headers or deprecation policy found
+- id: ed25519-signed-responses
+  conforms: true
+  evidence: every 2xx /v1 response and every webhook batch carries a detached Ed25519 signature (X-Sirenic-Signature;
+    recipe sirenic-v1:kid:timestamp:sha256_b64(body)); public key at /.well-known/sirenic-signing-key; verification
+    code in n8n-nodes-sirenic/nodes/SirenicTrigger/signature.ts. Not RFC 9421 HTTP Message Signatures — a provider-specific
+    scheme.
+- id: gdpr
+  conforms: true
+  evidence: https://api.sirenic.eu/confidentialite — legal basis (art. 6.1.f), data-subject rights with rgpd@sirenic.eu
+    and 30-day handling, 72-hour CNIL breach notification, SCC-based transfer for the Anthropic processor, officer
+    data minimised to name/role/birth year per INPI/INSEE rules
+- id: etalab-2.0-open-licence
+  conforms: true
+  evidence: info.license in the OpenAPI names "Licence Ouverte / Open License Etalab 2.0" for the INSEE Sirene /
+    INPI RNE source data; every JSON response carries source and disclaimer fields
+domain_standards:
+  note: Company-data / KYB has no single wire standard the way SCIM or FHIR do; the contract DECLARES the identifier
+    schemes and official-register vocabularies it speaks, which is what lets an integrator who already holds those
+    identifiers integrate without a bespoke connector.
+  declared:
+  - id: iso-17442-lei
+    conforms: true
+    evidence: 'openapi info.description and /v1/entreprise/{siren} response: groupe_lei (GLEIF level-2 consolidating
+      parents) on every profile; /v1/eu/agrements accepts LEI; /v1/reperer checksum-validates LEI'
+  - id: iso-13616-iban
+    conforms: true
+    evidence: GET /v1/iban/verifier/{iban} — "ISO 13616 structure + mod-97 key" form check with bank identification
+      (openapi description)
+  - id: eu-vies-vat
+    conforms: true
+    evidence: GET /v1/tva/verifier/{numero} and the invoicing packs check the intra-EU VAT number LIVE against VIES
+      (openapi, llms.txt "Verify before you pay")
+  - id: insee-siren-siret-naf
+    conforms: true
+    evidence: SIREN (9-digit, Luhn), SIRET (14-digit), NAF/APE codes and INSEE legal-category codes are the path
+      parameters and filters throughout /v1/entreprise/*, /v1/prospection (naf, forme_juridique)
+  - id: peppol
+    conforms: partial
+    evidence: /v1/eu/facturation/dossier reports Peppol reachability for Belgian recipients (llms.txt); Sirenic
+      is not a Peppol access point or accredited PDP/PA and says so
+  - id: decp-open-procurement
+    conforms: true
+    evidence: /v1/marches/expirations and /v1/entreprise/{siren}/marches-publics are built on DECP (données essentielles
+      de la commande publique) and TED for EU awards (openapi descriptions)

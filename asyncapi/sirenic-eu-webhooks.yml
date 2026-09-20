@@ -1,0 +1,53 @@
+generated: '2026-09-19'
+method: searched
+spec_type: Webhooks
+source: openapi/sirenic-eu-openapi.yml (/v1/surveillance/creer, /v1/surveillance/{jeton}, …/renouveler, …/arreter),
+  https://api.sirenic.eu/llms.txt, https://github.com/sirenic-eu/n8n-nodes-sirenic (nodes/SirenicTrigger/signature.ts
+  — the verification recipe and retry policy, quoted), examples/responses/surveillance-creer.json
+description: 'Sirenic publishes no AsyncAPI document. Its event surface is the paid company-monitoring watchlist:
+  GET /v1/surveillance/creer registers 1-100 targets (SIREN, RNA association numbers, or dirigeant:Name) for 30/90/365
+  days; each target is checked DAILY against official sources and new events are delivered by Ed25519-signed webhook
+  POSTs, e-mail digests, and/or pulled from GET /v1/surveillance/{jeton}. Recorded here as a webhook catalog; no
+  AsyncAPI is fabricated.'
+subscription:
+  create: GET /v1/surveillance/creer?cibles=&duree=30|90|365&webhook=<https URL>&email=
+  price: $0.05 / $0.135 / $0.50 per target for 30 / 90 / 365 days (quoted = unit × targets); no account, no refund
+  token: sw_<uuid>.<timestamp>.<Ed25519 signature> returned as jeton and surveillance_id — a bearer capability;
+    the signature lets a client verify offline that the server issued it
+  status: 'GET /v1/surveillance/{jeton} (free): active / expiree_renouvelable / expiree, targets with last-checked
+    timestamps, last 100 events with delivery status'
+  renew: GET /v1/surveillance/{jeton}/renouveler?duree= (paid; 410 once the grace period has passed and the watch
+    is purged)
+  stop: GET /v1/surveillance/{jeton}/arreter (free) — stops and purges targets and events immediately
+channels:
+- name: webhook
+  transport: HTTPS POST of event batches to the URL given at creation
+  signing: 'Ed25519 detached signature: message = utf8("sirenic-v1:" + kid + ":" + timestamp + ":" + base64(sha256(raw
+    body))), signature base64 (64 bytes) in the X-Sirenic-Signature header, key id and timestamp in companion headers;
+    public key at https://api.sirenic.eu/.well-known/sirenic-signing-key (the same recipe signs every paid 2xx API
+    response)'
+  retry_policy: signature and timestamp are computed once before three attempts spread over ~33 s; an undelivered
+    batch is re-sent the next day with a fresh timestamp (n8n SirenicTrigger comments)
+- name: email
+  transport: e-mail digests to the address given at creation
+- name: pull
+  transport: GET /v1/surveillance/{jeton} — always available, last 100 events
+sources_watched:
+- Sirene (status, officers)
+- BODACC (insolvency proceedings, deregistrations, sales, filings)
+- sanctions lists and the AMF blacklist
+- PSAN/SGP registers
+- Seveso / Géorisques
+- French (DECP) and EU (TED) procurement awards
+- JOAFE notices for associations
+- public offices of watched directors
+events:
+- name: expiration_proche
+  description: emitted 7 days before the watch expires, on every channel (openapi /v1/surveillance/creer 200 description)
+- name: (source diff events)
+  description: daily diffs per source above; the event-type vocabulary itself is not enumerated in the public spec
+    — the pull route returns the last 100 events with their delivery status
+delivery_guarantee: 'Daily verification: an event is signalled at the latest the working day after the source publishes
+  it (surveillance-creer disclaimer). Matches on sanctions / AMF lists are name matches to verify, never a decision.'
+poll_alternative: GET /v1/entreprise/{siren}/changements?depuis=YYYY-MM-DD ($0.01) — new BODACC announcements since
+  a date, for portfolio polling without a watchlist.

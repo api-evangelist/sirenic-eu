@@ -1,0 +1,673 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist overlay for the Sirenic API
+  version: 1.0.0
+  x-generated: '2026-09-19'
+  x-method: generated
+  x-source: openapi/sirenic-eu-openapi.yml (verbatim from https://api.sirenic.eu/openapi.json, OpenAPI 3.1.0, 125
+    operations, no operationIds and no tags in the original)
+extends: openapi/sirenic-eu-openapi.yml
+actions:
+- target: $
+  update:
+    tags:
+    - name: Associations
+    - name: European Registers
+    - name: Free & Utility
+    - name: French Companies
+    - name: Invoicing & Payment Checks
+    - name: KYB & Risk
+    - name: Monitoring
+    - name: Public Procurement
+    - name: Search & Prospecting
+- target: $.info
+  update:
+    x-api-evangelist:
+      catalog: https://apis.io/providers/sirenic-eu/
+      artifacts:
+      - conventions/sirenic-eu-conventions.yml
+      - errors/sirenic-eu-problem-types.yml
+      - authentication/sirenic-eu-authentication.yml
+- target: $.paths['/v1/recherche'].get
+  update:
+    operationId: getRecherche
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}'].get
+  update:
+    operationId: getEntrepriseBySiren
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/etablissements'].get
+  update:
+    operationId: getEntrepriseBySirenEtablissements
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/alertes'].get
+  update:
+    operationId: getEntrepriseBySirenAlertes
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/contentieux'].get
+  update:
+    operationId: getEntrepriseBySirenContentieux
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/accords-collectifs'].get
+  update:
+    operationId: getEntrepriseBySirenAccordsCollectifs
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/finances'].get
+  update:
+    operationId: getEntrepriseBySirenFinances
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/marches-publics'].get
+  update:
+    operationId: getEntrepriseBySirenMarchesPublics
+    tags:
+    - Public Procurement
+- target: $.paths['/v1/marches/expirations'].get
+  update:
+    operationId: getMarchesExpirations
+    tags:
+    - Public Procurement
+- target: $.paths['/v1/acheteur/{siret}/profil'].get
+  update:
+    operationId: getAcheteurBySiretProfil
+    tags:
+    - Public Procurement
+- target: $.paths['/v1/entreprise/{siren}/concurrents-marches'].get
+  update:
+    operationId: getEntrepriseBySirenConcurrentsMarches
+    tags:
+    - Public Procurement
+- target: $.paths['/v1/eu/recherche'].get
+  update:
+    operationId: getEuRecherche
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/{pays}/{id}'].get
+  update:
+    operationId: getEuEntrepriseByPaysById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/BE/{id}'].get
+  update:
+    operationId: getEuEntrepriseBeById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CH/{id}'].get
+  update:
+    operationId: getEuEntrepriseChById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/NO/{id}'].get
+  update:
+    operationId: getEuEntrepriseNoById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CZ/{id}'].get
+  update:
+    operationId: getEuEntrepriseCzById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/SK/{id}'].get
+  update:
+    operationId: getEuEntrepriseSkById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/FI/{id}'].get
+  update:
+    operationId: getEuEntrepriseFiById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/PL/{id}'].get
+  update:
+    operationId: getEuEntreprisePlById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/EE/{id}'].get
+  update:
+    operationId: getEuEntrepriseEeById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{id}'].get
+  update:
+    operationId: getEuEntrepriseLvById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CY/{id}'].get
+  update:
+    operationId: getEuEntrepriseCyById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/SE/{id}'].get
+  update:
+    operationId: getEuEntrepriseSeById
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/ES/{hoja}/actes'].get
+  update:
+    operationId: getEuEntrepriseEsByHojaActes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/NO/{id}/comptes'].get
+  update:
+    operationId: getEuEntrepriseNoByIdComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/NO/{id}/evenements'].get
+  update:
+    operationId: getEuEntrepriseNoByIdEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/NO/{id}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseNoByIdDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/NO/{id}/etablissements'].get
+  update:
+    operationId: getEuEntrepriseNoByIdEtablissements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/marches-publics'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberMarchesPublics
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/annonces'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberAnnonces
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/beneficiaires-effectifs'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberBeneficiairesEffectifs
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{regnr}/comptes'].get
+  update:
+    operationId: getEuEntrepriseLvByRegnrComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{regnr}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseLvByRegnrInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{regnr}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseLvByRegnrDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{regnr}/evenements'].get
+  update:
+    operationId: getEuEntrepriseLvByRegnrEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/HR/{oib}'].get
+  update:
+    operationId: getEuEntrepriseHrByOib
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/HR/{oib}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseHrByOibInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/HR/{oib}/evenements'].get
+  update:
+    operationId: getEuEntrepriseHrByOibEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/HR/{oib}/comptes'].get
+  update:
+    operationId: getEuEntrepriseHrByOibComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CH/{id}/evenements'].get
+  update:
+    operationId: getEuEntrepriseChByIdEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CH/{id}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseChByIdInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/FI/{id}/evenements'].get
+  update:
+    operationId: getEuEntrepriseFiByIdEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LT/{kodas}'].get
+  update:
+    operationId: getEuEntrepriseLtByKodas
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LT/{kodas}/comptes'].get
+  update:
+    operationId: getEuEntrepriseLtByKodasComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LT/{kodas}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseLtByKodasInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/IE/{numero}'].get
+  update:
+    operationId: getEuEntrepriseIeByNumero
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/IE/{numero}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseIeByNumeroInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CY/{id}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseCyByIdDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/RO/{cui}'].get
+  update:
+    operationId: getEuEntrepriseRoByCui
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/RO/{cui}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseRoByCuiDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/RO/{cui}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseRoByCuiInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/RO/{cui}/comptes'].get
+  update:
+    operationId: getEuEntrepriseRoByCuiComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/PT/{nipc}/marches-publics'].get
+  update:
+    operationId: getEuEntreprisePtByNipcMarchesPublics
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/PL/{nip}/marches-publics'].get
+  update:
+    operationId: getEuEntreprisePlByNipMarchesPublics
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/ES/{nif}/marches-publics'].get
+  update:
+    operationId: getEuEntrepriseEsByNifMarchesPublics
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{regnr}/marches-publics'].get
+  update:
+    operationId: getEuEntrepriseLvByRegnrMarchesPublics
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/LV/{regnr}/associes'].get
+  update:
+    operationId: getEuEntrepriseLvByRegnrAssocies
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/EE/{registrikood}/comptes'].get
+  update:
+    operationId: getEuEntrepriseEeByRegistrikoodComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/EE/{registrikood}/evenements'].get
+  update:
+    operationId: getEuEntrepriseEeByRegistrikoodEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/EE/{registrikood}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseEeByRegistrikoodDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/EE/{registrikood}/associes'].get
+  update:
+    operationId: getEuEntrepriseEeByRegistrikoodAssocies
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/SE/{orgnr}/comptes'].get
+  update:
+    operationId: getEuEntrepriseSeByOrgnrComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/SE/{orgnr}/evenements'].get
+  update:
+    operationId: getEuEntrepriseSeByOrgnrEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/DK/{cvr}/dirigeants'].get
+  update:
+    operationId: getEuEntrepriseDkByCvrDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/CZ/{ico}/insolvabilite'].get
+  update:
+    operationId: getEuEntrepriseCzByIcoInsolvabilite
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/PL/{krs}/evenements'].get
+  update:
+    operationId: getEuEntreprisePlByKrsEvenements
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/{pays}/{id}/comptes'].get
+  update:
+    operationId: getEuEntrepriseByPaysByIdComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/{pays}/{id}/comptes/{reference}'].get
+  update:
+    operationId: getEuEntrepriseByPaysByIdComptesByReference
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/DK/{id}/comptes'].get
+  update:
+    operationId: getEuEntrepriseDkByIdComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/DK/{id}/comptes/{date_cloture}'].get
+  update:
+    operationId: getEuEntrepriseDkByIdComptesByDatecloture
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/SK/{ico}/comptes'].get
+  update:
+    operationId: getEuEntrepriseSkByIcoComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/SK/{ico}/comptes/{date_cloture}'].get
+  update:
+    operationId: getEuEntrepriseSkByIcoComptesByDatecloture
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/comptes'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberComptes
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/GB/{company_number}/comptes/{date_cloture}'].get
+  update:
+    operationId: getEuEntrepriseGbByCompanynumberComptesByDatecloture
+    tags:
+    - European Registers
+- target: $.paths['/v1/intelligence/{siren}'].get
+  update:
+    operationId: getIntelligenceBySiren
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/rapport/{siren}'].get
+  update:
+    operationId: getRapportBySiren
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/entreprise/{siren}/documents'].get
+  update:
+    operationId: getEntrepriseBySirenDocuments
+    tags:
+    - French Companies
+- target: $.paths['/v1/documents/{type}/{id}'].get
+  update:
+    operationId: getDocumentsByTypeById
+    tags:
+    - French Companies
+- target: $.paths['/v1/prospection'].get
+  update:
+    operationId: getProspection
+    tags:
+    - Search & Prospecting
+- target: $.paths['/v1/entreprise/{siren}/sante'].get
+  update:
+    operationId: getEntrepriseBySirenSante
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/score/defaillance/{siren}'].get
+  update:
+    operationId: getScoreDefaillanceBySiren
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/secteur/{code_naf}/benchmarks'].get
+  update:
+    operationId: getSecteurByCodenafBenchmarks
+    tags:
+    - Search & Prospecting
+- target: $.paths['/v1/entreprise/{siren}/capital'].get
+  update:
+    operationId: getEntrepriseBySirenCapital
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/pi'].get
+  update:
+    operationId: getEntrepriseBySirenPi
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/changements'].get
+  update:
+    operationId: getEntrepriseBySirenChangements
+    tags:
+    - French Companies
+- target: $.paths['/v1/facture/verifier'].get
+  update:
+    operationId: getFactureVerifier
+    tags:
+    - Invoicing & Payment Checks
+- target: $.paths['/v1/facturation/dossier'].get
+  update:
+    operationId: getFacturationDossier
+    tags:
+    - Invoicing & Payment Checks
+- target: $.paths['/v1/entreprise/{siren}/facturation-prep'].get
+  update:
+    operationId: getEntrepriseBySirenFacturationPrep
+    tags:
+    - Invoicing & Payment Checks
+- target: $.paths['/v1/bodacc/recherche'].get
+  update:
+    operationId: getBodaccRecherche
+    tags:
+    - Search & Prospecting
+- target: $.paths['/v1/entreprise/{siren}/dossier'].get
+  update:
+    operationId: getEntrepriseBySirenDossier
+    tags:
+    - French Companies
+- target: $.paths['/v1/dirigeant/recherche'].get
+  update:
+    operationId: getDirigeantRecherche
+    tags:
+    - Search & Prospecting
+- target: $.paths['/v1/kyb/batch'].get
+  update:
+    operationId: getKybBatch
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/comparer'].get
+  update:
+    operationId: getComparer
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/kyb/{siren}'].get
+  update:
+    operationId: getKybBySiren
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/entreprise/{siren}/risques-industriels'].get
+  update:
+    operationId: getEntrepriseBySirenRisquesIndustriels
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/entreprise/{siren}/emploi'].get
+  update:
+    operationId: getEntrepriseBySirenEmploi
+    tags:
+    - French Companies
+- target: $.paths['/v1/eu/facturation/dossier'].get
+  update:
+    operationId: getEuFacturationDossier
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/{pays}/{id}/marches-publics-ue'].get
+  update:
+    operationId: getEuEntrepriseByPaysByIdMarchesPublicsUe
+    tags:
+    - European Registers
+- target: $.paths['/v1/eu/entreprise/{pays}/{id}/transactions-dirigeants'].get
+  update:
+    operationId: getEuEntrepriseByPaysByIdTransactionsDirigeants
+    tags:
+    - European Registers
+- target: $.paths['/v1/entreprise/{siren}/agrements'].get
+  update:
+    operationId: getEntrepriseBySirenAgrements
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/association/{rna}'].get
+  update:
+    operationId: getAssociationByRna
+    tags:
+    - Associations
+- target: $.paths['/v1/associations/recherche'].get
+  update:
+    operationId: getAssociationsRecherche
+    tags:
+    - Associations
+- target: $.paths['/v1/association/{rna}/annonces'].get
+  update:
+    operationId: getAssociationByRnaAnnonces
+    tags:
+    - Associations
+- target: $.paths['/v1/surveillance/creer'].get
+  update:
+    operationId: getSurveillanceCreer
+    tags:
+    - Monitoring
+    x-api-evangelist-write-surface: true
+    x-api-evangelist-note: A GET that mutates server state (creates / extends / stops a paid watchlist). Flagged
+      so agents treat it as a write despite the method.
+- target: $.paths['/v1/surveillance/{jeton}'].get
+  update:
+    operationId: getSurveillanceByJeton
+    tags:
+    - Monitoring
+    x-api-evangelist-free: true
+- target: $.paths['/v1/surveillance/{jeton}/renouveler'].get
+  update:
+    operationId: getSurveillanceByJetonRenouveler
+    tags:
+    - Monitoring
+    x-api-evangelist-write-surface: true
+    x-api-evangelist-note: A GET that mutates server state (creates / extends / stops a paid watchlist). Flagged
+      so agents treat it as a write despite the method.
+- target: $.paths['/v1/surveillance/{jeton}/arreter'].get
+  update:
+    operationId: getSurveillanceByJetonArreter
+    tags:
+    - Monitoring
+    x-api-evangelist-write-surface: true
+    x-api-evangelist-note: A GET that mutates server state (creates / extends / stops a paid watchlist). Flagged
+      so agents treat it as a write despite the method.
+    x-api-evangelist-free: true
+- target: $.paths['/v1/entreprise/{siren}/marches-publics-ue'].get
+  update:
+    operationId: getEntrepriseBySirenMarchesPublicsUe
+    tags:
+    - Public Procurement
+- target: $.paths['/v1/entreprise/{siren}/financements-ue'].get
+  update:
+    operationId: getEntrepriseBySirenFinancementsUe
+    tags:
+    - French Companies
+- target: $.paths['/v1/entreprise/{siren}/lobbying'].get
+  update:
+    operationId: getEntrepriseBySirenLobbying
+    tags:
+    - French Companies
+- target: $.paths['/v1/regulateurs/fr/alertes'].get
+  update:
+    operationId: getRegulateursFrAlertes
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/eu/agrements'].get
+  update:
+    operationId: getEuAgrements
+    tags:
+    - European Registers
+- target: $.paths['/v1/sanctions/check'].get
+  update:
+    operationId: getSanctionsCheck
+    tags:
+    - KYB & Risk
+- target: $.paths['/v1/iban/verifier/{iban}'].get
+  update:
+    operationId: getIbanVerifierByIban
+    tags:
+    - Invoicing & Payment Checks
+- target: $.paths['/v1/tva/verifier/{numero}'].get
+  update:
+    operationId: getTvaVerifierByNumero
+    tags:
+    - Invoicing & Payment Checks
+- target: $.paths['/v1/provenance/registres'].get
+  update:
+    operationId: getProvenanceRegistres
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true
+- target: $.paths['/v1/lecture'].get
+  update:
+    operationId: getLecture
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true
+- target: $.paths['/v1/suggestions'].get
+  update:
+    operationId: getSuggestions
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true
+- target: $.paths['/v1/reperer'].get
+  update:
+    operationId: getReperer
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true
+- target: $.paths['/preview/entreprise/55203253400646'].get
+  update:
+    operationId: getPreviewEntreprise55203253400646
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true
+- target: $.paths['/v1/demo/entreprise'].get
+  update:
+    operationId: getDemoEntreprise
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true
+- target: $.paths['/healthz'].get
+  update:
+    operationId: getHealthz
+    tags:
+    - Free & Utility
+    x-api-evangelist-free: true

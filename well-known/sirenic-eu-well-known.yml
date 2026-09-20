@@ -1,0 +1,104 @@
+generated: '2026-09-19'
+method: searched
+hit_count: 9
+path_echo_control: passed
+description: 'Results of probing the /.well-known/ discovery surface on every host the record knows: the registrable
+  domain sirenic.eu (and www), and the API/docs/MCP/A2A host api.sirenic.eu — Sirenic runs its landing page, docs,
+  REST API, MCP server and A2A agent on the single host api.sirenic.eu; the OpenAPI servers[] names it and the OAuth
+  protected-resource document names it as both resource and authorization server, so there is no third auth host.
+  Status is the HTTP code observed on 2026-09-19. Unknown paths on api.sirenic.eu return a genuine 23-byte JSON
+  404 (openid-configuration, ai-plugin.json), so the 200s are real documents, not a catch-all. robots.txt is saved
+  because it carries Content-Signal directives (contentsignals.org) — the consent/identity signal — and explicitly
+  allows GPTBot, ClaudeBot, PerplexityBot and Google-Extended.'
+hosts:
+- host: https://api.sirenic.eu
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    type: text/plain; charset=utf-8
+    file: sirenic-eu-security.txt
+  - path: /.well-known/oauth-authorization-server
+    status: 200
+    type: application/json; charset=utf-8
+    file: sirenic-eu-oauth-authorization-server.json
+  - path: /.well-known/oauth-protected-resource
+    status: 200
+    type: application/json; charset=utf-8
+    file: sirenic-eu-oauth-protected-resource.json
+  - path: /.well-known/api-catalog
+    status: 200
+    type: application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"
+    file: sirenic-eu-api-catalog.json
+  - path: /.well-known/mcp.json
+    status: 200
+    type: application/json; charset=utf-8
+    file: sirenic-eu-mcp.json
+  - path: /.well-known/x402
+    status: 200
+    type: application/json; charset=utf-8
+    file: sirenic-eu-x402.json
+  - path: /.well-known/agent-card.json
+    status: 200
+    type: application/json; charset=utf-8
+    file: ../a2a/sirenic-eu-agent-card.json
+  - path: /.well-known/agent.json
+    status: 200
+    type: application/json; charset=utf-8
+    file: ../a2a/sirenic-eu-agent-card.json
+  - path: /robots.txt
+    status: 200
+    type: text/plain; charset=utf-8
+    file: sirenic-eu-robots.txt
+  - path: /.well-known/openid-configuration
+    status: 404
+    type: application/json; charset=utf-8
+    note: 23-byte JSON not-found body — a real 404, which also serves as the path-echo negative control for this
+      host
+  - path: /.well-known/ai-plugin.json
+    status: 404
+    type: application/json; charset=utf-8
+    note: 23-byte JSON not-found body — a real 404, which also serves as the path-echo negative control for this
+      host
+- host: https://sirenic.eu
+  documents:
+  - path: /.well-known/security.txt
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/security.txt
+  - path: /.well-known/openid-configuration
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/openid-configuration
+  - path: /.well-known/oauth-authorization-server
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/oauth-authorization-server
+  - path: /.well-known/oauth-protected-resource
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/oauth-protected-resource
+  - path: /.well-known/api-catalog
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/api-catalog
+  - path: /.well-known/ai-plugin.json
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/ai-plugin.json
+  - path: /.well-known/agent-card.json
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/agent-card.json
+  - path: /.well-known/agent.json
+    status: 308
+    note: 308 Permanent Redirect to https://api.sirenic.eu/.well-known/agent.json
+- host: https://www.sirenic.eu
+  documents:
+  - path: /
+    status: 308
+    note: 308 to https://api.sirenic.eu/ — the www host is a pure redirect
+discovery_extras:
+  note: The api-catalog linkset additionally names /.well-known/ai-catalog.json, /mcp/server-card (SEP-2127), /.well-known/agent-skills/index.json
+    and /healthz; the GitHub examples name /.well-known/sirenic-signing-key (Ed25519 response-signing key). See
+    probe_log_round3 below for what each returned.
+dns:
+  txt_records:
+  - v=MCPv1; k=ed25519; p=sYmRZBf76vIbkSIA6HUAo5oSDkxBCZ8nmgPq+L9z6hw=
+  - v=spf1 include:mx.ovh.com ~all
+  - brevo-code:… (mail sender verification)
+  - google-site-verification=…
+  dmarc: v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com,mailto:contact@sirenic.eu
+  note: A v=MCPv1 ed25519 TXT record at the apex publishes an MCP server identity key in DNS.

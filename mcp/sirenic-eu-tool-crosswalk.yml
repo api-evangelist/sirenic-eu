@@ -1,0 +1,422 @@
+generated: '2026-09-19'
+method: derived
+source: 'Tool names published by the provider in sirenic-eu/sirenic-examples/examples/mcp-setup.md and sirenic-gemini-extension/GEMINI.md,
+  bound by name and description semantics to the operations of openapi/sirenic-eu-openapi.yml (operationIds are
+  OURS, assigned in overlays/sirenic-eu-openapi-overlay.yaml because the provider spec has none). The live tools/list
+  on https://api.sirenic.eu/mcp could not be captured on 2026-09-19: the host began refusing TCP connections from
+  the probing IP after the first burst of well-known fetches, before the JSON-RPC probe ran.'
+purpose: 'Bind each MCP tool to its backing REST route so an agent can read the real parameters from the OpenAPI.
+  Sirenic''s three agent surfaces (REST, MCP, A2A) are projections of one price grid: the A2A card is exactly 116
+  paid routes; the MCP server is documented as 25 tools in July 2026 and 77 tools by September 2026 (gemini-extension.json),
+  so MCP is a curated subset of REST, growing towards it.'
+surfaces:
+  rest_openapi: openapi/sirenic-eu-openapi.yml (125 GET operations)
+  mcp: https://api.sirenic.eu/mcp (streamable HTTP; anonymous connect, tools quote x402 unless x_payment or api_key
+    given) and https://api.sirenic.eu/mcp/connecteur (OAuth, for assistants)
+  a2a: https://api.sirenic.eu/a2a (116 skills = paid routes, ids are the path templates)
+  graphql: null
+tool_count_published:
+  2026-07 examples/mcp-setup.md: 25
+  2026-09-03 gemini-extension.json: 77
+crosswalk:
+- tool: search_french_companies
+  category: search
+  rest:
+  - getRecherche
+  path: /v1/recherche
+  binding: rest
+  confidence: high
+- tool: suggest_company_names
+  category: search
+  rest:
+  - getSuggestions
+  path: /v1/suggestions
+  binding: rest
+  confidence: high
+- tool: detect_company_identifiers
+  category: utility
+  rest:
+  - getReperer
+  path: /v1/reperer
+  binding: rest
+  confidence: high
+- tool: get_french_company_profile
+  category: lookup
+  rest:
+  - getEntrepriseBySiren
+  path: /v1/entreprise/{siren}
+  binding: rest
+  confidence: high
+- tool: get_french_company_kyb_file
+  category: kyb
+  rest:
+  - getKybBySiren
+  path: /v1/kyb/{siren}
+  binding: rest
+  confidence: high
+- tool: get_french_company_kyb_batch
+  category: kyb
+  rest:
+  - getKybBatch
+  path: /v1/kyb/batch
+  binding: rest
+  confidence: high
+- tool: screen_sanctions_lists
+  category: compliance
+  rest:
+  - getSanctionsCheck
+  path: /v1/sanctions/check
+  binding: rest
+  confidence: high
+- tool: get_french_company_financials
+  category: financials
+  rest:
+  - getEntrepriseBySirenFinances
+  path: /v1/entreprise/{siren}/finances
+  binding: rest
+  confidence: high
+- tool: get_french_company_default_risk
+  category: risk
+  rest:
+  - getScoreDefaillanceBySiren
+  path: /v1/score/defaillance/{siren}
+  binding: rest
+  confidence: high
+- tool: get_french_sector_benchmarks
+  category: risk
+  rest:
+  - getSecteurByCodenafBenchmarks
+  path: /v1/secteur/{code_naf}/benchmarks
+  binding: rest
+  confidence: high
+- tool: get_french_company_capital
+  category: ownership
+  rest:
+  - getEntrepriseBySirenCapital
+  path: /v1/entreprise/{siren}/capital
+  binding: rest
+  confidence: high
+- tool: get_french_company_intellectual_property
+  category: ip
+  rest:
+  - getEntrepriseBySirenPi
+  path: /v1/entreprise/{siren}/pi
+  binding: rest
+  confidence: high
+- tool: get_french_company_legal_alerts
+  category: compliance
+  rest:
+  - getEntrepriseBySirenAlertes
+  path: /v1/entreprise/{siren}/alertes
+  binding: rest
+  confidence: high
+- tool: get_french_company_changes
+  category: monitoring
+  rest:
+  - getEntrepriseBySirenChangements
+  path: /v1/entreprise/{siren}/changements
+  binding: rest
+  confidence: high
+- tool: search_french_company_directors
+  category: people
+  rest:
+  - getDirigeantRecherche
+  path: /v1/dirigeant/recherche
+  binding: rest
+  confidence: high
+- tool: get_french_company_health_summary
+  category: risk
+  rest:
+  - getEntrepriseBySirenSante
+  path: /v1/entreprise/{siren}/sante
+  binding: rest
+  confidence: high
+- tool: search_european_companies
+  category: search
+  rest:
+  - getEuRecherche
+  path: /v1/eu/recherche
+  binding: rest
+  confidence: high
+- tool: get_french_company_pdf_report
+  category: reporting
+  rest:
+  - getRapportBySiren
+  path: /v1/rapport/{siren}
+  binding: rest
+  confidence: high
+- tool: prepare_french_invoice_file
+  category: invoicing
+  rest:
+  - getFacturationDossier
+  path: /v1/facturation/dossier
+  binding: rest
+  confidence: high
+- tool: validate_eu_vat_number
+  category: invoicing
+  rest:
+  - getTvaVerifierByNumero
+  path: /v1/tva/verifier/{numero}
+  binding: rest
+  confidence: high
+- tool: verify_iban_bank
+  category: invoicing
+  rest:
+  - getIbanVerifierByIban
+  path: /v1/iban/verifier/{iban}
+  binding: rest
+  confidence: high
+- tool: check_french_regulator_alerts
+  category: compliance
+  rest:
+  - getRegulateursFrAlertes
+  path: /v1/regulateurs/fr/alertes
+  binding: rest
+  confidence: high
+- tool: get_french_company_public_procurement
+  category: procurement
+  rest:
+  - getEntrepriseBySirenMarchesPublics
+  path: /v1/entreprise/{siren}/marches-publics
+  binding: rest
+  confidence: medium
+  note: name suggests the FR (DECP) procurement route; the EU (TED) route /v1/entreprise/{siren}/marches-publics-ue
+    may be a separate tool
+- tool: find_expiring_french_public_contracts
+  category: procurement
+  rest:
+  - getMarchesExpirations
+  path: /v1/marches/expirations
+  binding: rest
+  confidence: high
+- tool: get_french_public_buyer_profile
+  category: procurement
+  rest:
+  - getAcheteurBySiretProfil
+  path: /v1/acheteur/{siret}/profil
+  binding: rest
+  confidence: high
+- tool: get_french_company_intelligence
+  category: kyb
+  rest:
+  - getIntelligenceBySiren
+  path: /v1/intelligence/{siren}
+  binding: rest
+  confidence: high
+mcp_only:
+- tool: get_french_company_capital_links
+  reason: named in examples/mcp-setup.md (2026-07) but no such route in the 2026-09-19 OpenAPI — /v1/entreprise/{siren}/liens-capitalistiques
+    was removed (n8n CHANGELOG 0.12.0) and no accounts-notes route exists; likely a retired or renamed tool. Confirm
+    with an authenticated/unblocked tools/list.
+- tool: get_french_company_accounts_notes
+  reason: named in examples/mcp-setup.md (2026-07) but no such route in the 2026-09-19 OpenAPI — /v1/entreprise/{siren}/liens-capitalistiques
+    was removed (n8n CHANGELOG 0.12.0) and no accounts-notes route exists; likely a retired or renamed tool. Confirm
+    with an authenticated/unblocked tools/list.
+rest_only:
+- operationId: getEntrepriseBySirenEtablissements
+  path: /v1/entreprise/{siren}/etablissements
+- operationId: getEntrepriseBySirenContentieux
+  path: /v1/entreprise/{siren}/contentieux
+- operationId: getEntrepriseBySirenAccordsCollectifs
+  path: /v1/entreprise/{siren}/accords-collectifs
+- operationId: getEntrepriseBySirenConcurrentsMarches
+  path: /v1/entreprise/{siren}/concurrents-marches
+- operationId: getEuEntrepriseByPaysById
+  path: /v1/eu/entreprise/{pays}/{id}
+- operationId: getEuEntrepriseBeById
+  path: /v1/eu/entreprise/BE/{id}
+- operationId: getEuEntrepriseChById
+  path: /v1/eu/entreprise/CH/{id}
+- operationId: getEuEntrepriseNoById
+  path: /v1/eu/entreprise/NO/{id}
+- operationId: getEuEntrepriseCzById
+  path: /v1/eu/entreprise/CZ/{id}
+- operationId: getEuEntrepriseSkById
+  path: /v1/eu/entreprise/SK/{id}
+- operationId: getEuEntrepriseFiById
+  path: /v1/eu/entreprise/FI/{id}
+- operationId: getEuEntreprisePlById
+  path: /v1/eu/entreprise/PL/{id}
+- operationId: getEuEntrepriseEeById
+  path: /v1/eu/entreprise/EE/{id}
+- operationId: getEuEntrepriseLvById
+  path: /v1/eu/entreprise/LV/{id}
+- operationId: getEuEntrepriseCyById
+  path: /v1/eu/entreprise/CY/{id}
+- operationId: getEuEntrepriseSeById
+  path: /v1/eu/entreprise/SE/{id}
+- operationId: getEuEntrepriseEsByHojaActes
+  path: /v1/eu/entreprise/ES/{hoja}/actes
+- operationId: getEuEntrepriseNoByIdComptes
+  path: /v1/eu/entreprise/NO/{id}/comptes
+- operationId: getEuEntrepriseNoByIdEvenements
+  path: /v1/eu/entreprise/NO/{id}/evenements
+- operationId: getEuEntrepriseNoByIdDirigeants
+  path: /v1/eu/entreprise/NO/{id}/dirigeants
+- operationId: getEuEntrepriseNoByIdEtablissements
+  path: /v1/eu/entreprise/NO/{id}/etablissements
+- operationId: getEuEntrepriseGbByCompanynumberMarchesPublics
+  path: /v1/eu/entreprise/GB/{company_number}/marches-publics
+- operationId: getEuEntrepriseGbByCompanynumberAnnonces
+  path: /v1/eu/entreprise/GB/{company_number}/annonces
+- operationId: getEuEntrepriseGbByCompanynumberDirigeants
+  path: /v1/eu/entreprise/GB/{company_number}/dirigeants
+- operationId: getEuEntrepriseGbByCompanynumberBeneficiairesEffectifs
+  path: /v1/eu/entreprise/GB/{company_number}/beneficiaires-effectifs
+- operationId: getEuEntrepriseGbByCompanynumberInsolvabilite
+  path: /v1/eu/entreprise/GB/{company_number}/insolvabilite
+- operationId: getEuEntrepriseLvByRegnrComptes
+  path: /v1/eu/entreprise/LV/{regnr}/comptes
+- operationId: getEuEntrepriseLvByRegnrInsolvabilite
+  path: /v1/eu/entreprise/LV/{regnr}/insolvabilite
+- operationId: getEuEntrepriseLvByRegnrDirigeants
+  path: /v1/eu/entreprise/LV/{regnr}/dirigeants
+- operationId: getEuEntrepriseLvByRegnrEvenements
+  path: /v1/eu/entreprise/LV/{regnr}/evenements
+- operationId: getEuEntrepriseHrByOib
+  path: /v1/eu/entreprise/HR/{oib}
+- operationId: getEuEntrepriseHrByOibInsolvabilite
+  path: /v1/eu/entreprise/HR/{oib}/insolvabilite
+- operationId: getEuEntrepriseHrByOibEvenements
+  path: /v1/eu/entreprise/HR/{oib}/evenements
+- operationId: getEuEntrepriseHrByOibComptes
+  path: /v1/eu/entreprise/HR/{oib}/comptes
+- operationId: getEuEntrepriseChByIdEvenements
+  path: /v1/eu/entreprise/CH/{id}/evenements
+- operationId: getEuEntrepriseChByIdInsolvabilite
+  path: /v1/eu/entreprise/CH/{id}/insolvabilite
+- operationId: getEuEntrepriseFiByIdEvenements
+  path: /v1/eu/entreprise/FI/{id}/evenements
+- operationId: getEuEntrepriseLtByKodas
+  path: /v1/eu/entreprise/LT/{kodas}
+- operationId: getEuEntrepriseLtByKodasComptes
+  path: /v1/eu/entreprise/LT/{kodas}/comptes
+- operationId: getEuEntrepriseLtByKodasInsolvabilite
+  path: /v1/eu/entreprise/LT/{kodas}/insolvabilite
+- operationId: getEuEntrepriseIeByNumero
+  path: /v1/eu/entreprise/IE/{numero}
+- operationId: getEuEntrepriseIeByNumeroInsolvabilite
+  path: /v1/eu/entreprise/IE/{numero}/insolvabilite
+- operationId: getEuEntrepriseCyByIdDirigeants
+  path: /v1/eu/entreprise/CY/{id}/dirigeants
+- operationId: getEuEntrepriseRoByCui
+  path: /v1/eu/entreprise/RO/{cui}
+- operationId: getEuEntrepriseRoByCuiDirigeants
+  path: /v1/eu/entreprise/RO/{cui}/dirigeants
+- operationId: getEuEntrepriseRoByCuiInsolvabilite
+  path: /v1/eu/entreprise/RO/{cui}/insolvabilite
+- operationId: getEuEntrepriseRoByCuiComptes
+  path: /v1/eu/entreprise/RO/{cui}/comptes
+- operationId: getEuEntreprisePtByNipcMarchesPublics
+  path: /v1/eu/entreprise/PT/{nipc}/marches-publics
+- operationId: getEuEntreprisePlByNipMarchesPublics
+  path: /v1/eu/entreprise/PL/{nip}/marches-publics
+- operationId: getEuEntrepriseEsByNifMarchesPublics
+  path: /v1/eu/entreprise/ES/{nif}/marches-publics
+- operationId: getEuEntrepriseLvByRegnrMarchesPublics
+  path: /v1/eu/entreprise/LV/{regnr}/marches-publics
+- operationId: getEuEntrepriseLvByRegnrAssocies
+  path: /v1/eu/entreprise/LV/{regnr}/associes
+- operationId: getEuEntrepriseEeByRegistrikoodComptes
+  path: /v1/eu/entreprise/EE/{registrikood}/comptes
+- operationId: getEuEntrepriseEeByRegistrikoodEvenements
+  path: /v1/eu/entreprise/EE/{registrikood}/evenements
+- operationId: getEuEntrepriseEeByRegistrikoodDirigeants
+  path: /v1/eu/entreprise/EE/{registrikood}/dirigeants
+- operationId: getEuEntrepriseEeByRegistrikoodAssocies
+  path: /v1/eu/entreprise/EE/{registrikood}/associes
+- operationId: getEuEntrepriseSeByOrgnrComptes
+  path: /v1/eu/entreprise/SE/{orgnr}/comptes
+- operationId: getEuEntrepriseSeByOrgnrEvenements
+  path: /v1/eu/entreprise/SE/{orgnr}/evenements
+- operationId: getEuEntrepriseDkByCvrDirigeants
+  path: /v1/eu/entreprise/DK/{cvr}/dirigeants
+- operationId: getEuEntrepriseCzByIcoInsolvabilite
+  path: /v1/eu/entreprise/CZ/{ico}/insolvabilite
+- operationId: getEuEntreprisePlByKrsEvenements
+  path: /v1/eu/entreprise/PL/{krs}/evenements
+- operationId: getEuEntrepriseByPaysByIdComptes
+  path: /v1/eu/entreprise/{pays}/{id}/comptes
+- operationId: getEuEntrepriseByPaysByIdComptesByReference
+  path: /v1/eu/entreprise/{pays}/{id}/comptes/{reference}
+- operationId: getEuEntrepriseDkByIdComptes
+  path: /v1/eu/entreprise/DK/{id}/comptes
+- operationId: getEuEntrepriseDkByIdComptesByDatecloture
+  path: /v1/eu/entreprise/DK/{id}/comptes/{date_cloture}
+- operationId: getEuEntrepriseSkByIcoComptes
+  path: /v1/eu/entreprise/SK/{ico}/comptes
+- operationId: getEuEntrepriseSkByIcoComptesByDatecloture
+  path: /v1/eu/entreprise/SK/{ico}/comptes/{date_cloture}
+- operationId: getEuEntrepriseGbByCompanynumberComptes
+  path: /v1/eu/entreprise/GB/{company_number}/comptes
+- operationId: getEuEntrepriseGbByCompanynumberComptesByDatecloture
+  path: /v1/eu/entreprise/GB/{company_number}/comptes/{date_cloture}
+- operationId: getEntrepriseBySirenDocuments
+  path: /v1/entreprise/{siren}/documents
+- operationId: getDocumentsByTypeById
+  path: /v1/documents/{type}/{id}
+- operationId: getProspection
+  path: /v1/prospection
+- operationId: getFactureVerifier
+  path: /v1/facture/verifier
+- operationId: getEntrepriseBySirenFacturationPrep
+  path: /v1/entreprise/{siren}/facturation-prep
+- operationId: getBodaccRecherche
+  path: /v1/bodacc/recherche
+- operationId: getEntrepriseBySirenDossier
+  path: /v1/entreprise/{siren}/dossier
+- operationId: getComparer
+  path: /v1/comparer
+- operationId: getEntrepriseBySirenRisquesIndustriels
+  path: /v1/entreprise/{siren}/risques-industriels
+- operationId: getEntrepriseBySirenEmploi
+  path: /v1/entreprise/{siren}/emploi
+- operationId: getEuFacturationDossier
+  path: /v1/eu/facturation/dossier
+- operationId: getEuEntrepriseByPaysByIdMarchesPublicsUe
+  path: /v1/eu/entreprise/{pays}/{id}/marches-publics-ue
+- operationId: getEuEntrepriseByPaysByIdTransactionsDirigeants
+  path: /v1/eu/entreprise/{pays}/{id}/transactions-dirigeants
+- operationId: getEntrepriseBySirenAgrements
+  path: /v1/entreprise/{siren}/agrements
+- operationId: getAssociationByRna
+  path: /v1/association/{rna}
+- operationId: getAssociationsRecherche
+  path: /v1/associations/recherche
+- operationId: getAssociationByRnaAnnonces
+  path: /v1/association/{rna}/annonces
+- operationId: getSurveillanceCreer
+  path: /v1/surveillance/creer
+- operationId: getSurveillanceByJeton
+  path: /v1/surveillance/{jeton}
+- operationId: getSurveillanceByJetonRenouveler
+  path: /v1/surveillance/{jeton}/renouveler
+- operationId: getSurveillanceByJetonArreter
+  path: /v1/surveillance/{jeton}/arreter
+- operationId: getEntrepriseBySirenMarchesPublicsUe
+  path: /v1/entreprise/{siren}/marches-publics-ue
+- operationId: getEntrepriseBySirenFinancementsUe
+  path: /v1/entreprise/{siren}/financements-ue
+- operationId: getEntrepriseBySirenLobbying
+  path: /v1/entreprise/{siren}/lobbying
+- operationId: getEuAgrements
+  path: /v1/eu/agrements
+- operationId: getProvenanceRegistres
+  path: /v1/provenance/registres
+- operationId: getLecture
+  path: /v1/lecture
+- operationId: getPreviewEntreprise55203253400646
+  path: /preview/entreprise/55203253400646
+- operationId: getDemoEntreprise
+  path: /v1/demo/entreprise
+- operationId: getHealthz
+  path: /healthz
+coverage:
+  tools_named: 28
+  tools_bound: 26
+  tools_unbound: 2
+  rest_operations: 125
+  rest_bound: 26
+  rest_unbound: 99
+  note: 77 tools exist per the provider; only the 28 named in public text are listed. Every tool takes an optional
+    x_payment (x402 signature) and api_key argument in addition to the route parameters.

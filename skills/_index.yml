@@ -1,0 +1,44 @@
+generated: '2026-09-19'
+method: generated
+source: Packaged Agent Skills generated from the Sirenic OpenAPI (125 GET operations) and the runtime conventions
+  captured in conventions/, errors/, authentication/, asyncapi/. The provider advertises its own Agent Skill at
+  https://api.sirenic.eu/.well-known/agent-skills/index.json (named in the api-catalog); that document could not
+  be fetched on 2026-09-19 because the host refused TCP from the probing IP — see the note in mcp/sirenic-eu-mcp.yml.
+  Ours are additional, not a copy.
+skills:
+- file: sirenic-eu-verify-supplier-before-payment.md
+  name: Verify a French or European supplier before paying an invoice
+  api: openapi/sirenic-eu-openapi.yml
+  operations:
+  - getSuggestions
+  - getRecherche
+  - getFacturationDossier
+  - getEuFacturationDossier
+  - getTvaVerifierByNumero
+  - getIbanVerifierByIban
+- file: sirenic-eu-kyb-dossier.md
+  name: Build a KYB decision file for a French company
+  api: openapi/sirenic-eu-openapi.yml
+  operations:
+  - getRecherche
+  - getKybBySiren
+  - getEntrepriseBySirenDossier
+  - getKybBatch
+  - getSanctionsCheck
+  - getScoreDefaillanceBySiren
+- file: sirenic-eu-monitor-portfolio.md
+  name: Monitor a customer or supplier portfolio for legal events
+  api: openapi/sirenic-eu-openapi.yml
+  operations:
+  - getSurveillanceCreer
+  - getSurveillanceByJeton
+  - getSurveillanceByJetonRenouveler
+  - getSurveillanceByJetonArreter
+  - getEntrepriseBySirenChangements
+- file: sirenic-eu-pay-per-call-x402.md
+  name: Pay for a Sirenic call with x402 (or an API key) and verify the response
+  api: openapi/sirenic-eu-openapi.yml
+  operations:
+  - getReperer
+  - getEntrepriseBySiren
+  - getDemoEntreprise

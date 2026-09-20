@@ -1,0 +1,82 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://api.sirenic.eu/.well-known/api-catalog",
+      "item": [
+        {
+          "href": "https://api.sirenic.eu/",
+          "type": "text/html",
+          "title": "Sirenic API - French and European company data, paid per call (x402/USDC)"
+        }
+      ]
+    },
+    {
+      "anchor": "https://api.sirenic.eu/",
+      "service-desc": [
+        {
+          "href": "https://api.sirenic.eu/openapi.json",
+          "type": "application/json",
+          "title": "OpenAPI 3.1 description of the Sirenic API"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://api.sirenic.eu/llms.txt",
+          "type": "text/plain",
+          "title": "Sirenic API documentation for LLM agents (llms.txt)"
+        },
+        {
+          "href": "https://api.sirenic.eu/",
+          "type": "text/html",
+          "title": "Sirenic API documentation (landing page)"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://api.sirenic.eu/healthz",
+          "type": "application/json",
+          "title": "Sirenic API health check"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://api.sirenic.eu/.well-known/x402",
+          "type": "application/json",
+          "title": "x402 payment discovery document (USDC/EURC on Base)"
+        },
+        {
+          "href": "https://api.sirenic.eu/.well-known/mcp.json",
+          "type": "application/json",
+          "title": "Model Context Protocol server manifest"
+        },
+        {
+          "href": "https://api.sirenic.eu/.well-known/agent-card.json",
+          "type": "application/json",
+          "title": "A2A agent card"
+        },
+        {
+          "href": "https://api.sirenic.eu/.well-known/ai-catalog.json",
+          "type": "application/ai-catalog+json",
+          "title": "AI catalog (MCP server card, A2A agent card, agent skill)"
+        },
+        {
+          "href": "https://api.sirenic.eu/mcp/server-card",
+          "type": "application/mcp-server-card+json",
+          "title": "MCP server card (SEP-2127)"
+        },
+        {
+          "href": "https://api.sirenic.eu/.well-known/agent-skills/index.json",
+          "type": "application/json",
+          "title": "Agent Skills discovery index"
+        }
+      ],
+      "privacy-policy": [
+        {
+          "href": "https://api.sirenic.eu/confidentialite",
+          "type": "text/html",
+          "title": "Privacy policy (GDPR)"
+        }
+      ]
+    }
+  ]
+}

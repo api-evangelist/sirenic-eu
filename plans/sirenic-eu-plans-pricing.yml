@@ -1,0 +1,300 @@
+specification: API Commons Plans
+specificationVersion: '0.1'
+provider: Sirenic
+providerId: sirenic-eu
+created: '2026-09-19'
+modified: '2026-09-19'
+generated: '2026-09-19'
+method: probed
+sources:
+- https://api.sirenic.eu/.well-known/mcp.json (payment.pricing, payment.api_key_alternative)
+- https://api.sirenic.eu/.well-known/x402 (items[].accepts[].amount, atomic USDC units)
+- https://api.sirenic.eu/openapi.json (x-price per operation)
+- https://api.sirenic.eu/llms.txt (credit packs, free tier)
+pricing_page: https://api.sirenic.eu/offres
+currency: USD (USDC) — EURC accepted at numeric parity (same figure, not FX-converted); prepaid credits 1 credit
+  = 1 EUR at the same per-call figures
+description: 'Sirenic has no tiers: it is a public per-call price grid, one price per route, read here from the
+  provider''s own machine-readable manifests rather than a marketing page. 116 priced routes from $0.002 to $1.00
+  per call; per-unit routes multiply (KYB batch per company, comparison per company, watchlists per target × duration).
+  Two payment rails at identical prices: x402 (no account) or prepaid credits with an API key.'
+plan_count: 3
+plans:
+- id: x402-pay-per-call
+  name: Pay per call (x402, no account)
+  type: usage-based
+  price: per route, see price_grid
+  billing_period: per call, settled on Base (eip155:8453) in USDC or EURC
+  included_quota: none — free routes excepted
+  overage: n/a
+  limits: x402 client default cap $1.00 per payment (client-side); maxTimeoutSeconds 120 per quote
+  notes: Only 2xx responses are settled.
+- id: prepaid-credits
+  name: API key + prepaid credits
+  type: prepaid
+  price: packs of 10 / 20 / 50 / 100 EUR (1 credit = 1 EUR), Stripe invoice included
+  billing_period: credits valid 12 months from purchase; closest-to-expiry spent first; e-mail 30 days before expiry
+  included_quota: 150 free calls per month on routes priced ≤ $0.05 with a verified account
+  overage: 402 credits_insuffisants when the balance is exhausted
+  limits: same per-call prices as x402
+  signup: https://api.sirenic.eu/compte
+- id: free
+  name: Free routes
+  type: free
+  price: $0
+  included_quota: /v1/suggestions 2,000 calls/day/IP (60/min); /v1/reperer, /v1/lecture, /v1/provenance/registres,
+    /v1/demo/entreprise, /preview/…, /exemples/*.json, /healthz, /openapi.json, /llms.txt unmetered
+  limits: suggestions quota → 429
+price_grid:
+- route: /v1/recherche
+  price: $0.002
+- route: /v1/entreprise/{siren}
+  price: $0.005
+- route: /v1/entreprise/{siren}/etablissements
+  price: $0.003
+- route: /v1/entreprise/{siren}/alertes
+  price: $0.01
+- route: /v1/entreprise/{siren}/contentieux
+  price: $0.01
+- route: /v1/entreprise/{siren}/accords-collectifs
+  price: $0.02
+- route: /v1/entreprise/{siren}/capital
+  price: $0.35
+- route: /v1/entreprise/{siren}/changements
+  price: $0.01
+- route: /v1/entreprise/{siren}/pi
+  price: $0.03
+- route: /v1/entreprise/{siren}/finances
+  price: $0.01
+- route: /v1/entreprise/{siren}/marches-publics-ue
+  price: $0.02
+- route: /v1/entreprise/{siren}/financements-ue
+  price: $0.02
+- route: /v1/entreprise/{siren}/marches-publics
+  price: $0.01
+- route: /v1/marches/expirations
+  price: $0.05
+- route: /v1/acheteur/{siret}/profil
+  price: $0.02
+- route: /v1/entreprise/{siren}/concurrents-marches
+  price: $0.02
+- route: /v1/entreprise/{siren}/sante
+  price: $0.15
+- route: /v1/kyb/batch
+  price: $0.105
+- route: /v1/comparer
+  price: $0.12
+- route: /v1/kyb/{siren}
+  price: $0.15
+- route: /v1/sanctions/check
+  price: $0.02
+- route: /v1/regulateurs/fr/alertes
+  price: $0.01
+- route: /v1/entreprise/{siren}/risques-industriels
+  price: $0.01
+- route: /v1/entreprise/{siren}/agrements
+  price: $0.02
+- route: /v1/association/{rna}
+  price: $0.005
+- route: /v1/associations/recherche
+  price: $0.002
+- route: /v1/association/{rna}/annonces
+  price: $0.01
+- route: /v1/entreprise/{siren}/lobbying
+  price: $0.01
+- route: /v1/entreprise/{siren}/emploi
+  price: $0.02
+- route: /v1/eu/agrements
+  price: $0.01
+- route: /v1/surveillance/creer
+  price: $0.05
+- route: /v1/surveillance/{jeton}/renouveler
+  price: $0.05
+- route: /v1/dirigeant/recherche
+  price: $0.02
+- route: /v1/prospection
+  price: $0.02
+- route: /v1/intelligence/{siren}
+  price: $1.00
+- route: /v1/rapport/{siren}
+  price: $0.50
+- route: /v1/eu/recherche
+  price: $0.003
+- route: /v1/eu/entreprise/BE/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/CH/{id}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/CH/{id}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/CH/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/NO/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/CZ/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/SK/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/FI/{id}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/FI/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/PL/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/EE/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/LV/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/HR/{oib}
+  price: $0.01
+- route: /v1/eu/entreprise/HR/{oib}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/HR/{oib}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/HR/{oib}/comptes
+  price: $0.01
+- route: /v1/eu/entreprise/LT/{kodas}
+  price: $0.01
+- route: /v1/eu/entreprise/LT/{kodas}/comptes
+  price: $0.02
+- route: /v1/eu/entreprise/LT/{kodas}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/IE/{numero}
+  price: $0.01
+- route: /v1/eu/entreprise/IE/{numero}/insolvabilite
+  price: $0.01
+- route: /v1/eu/entreprise/CY/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/CY/{id}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/RO/{cui}
+  price: $0.01
+- route: /v1/eu/entreprise/RO/{cui}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/RO/{cui}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/RO/{cui}/comptes
+  price: $0.02
+- route: /v1/eu/entreprise/PT/{nipc}/marches-publics
+  price: $0.02
+- route: /v1/eu/entreprise/PL/{nip}/marches-publics
+  price: $0.02
+- route: /v1/eu/entreprise/ES/{nif}/marches-publics
+  price: $0.02
+- route: /v1/eu/entreprise/ES/{hoja}/actes
+  price: $0.02
+- route: /v1/eu/entreprise/GB/{company_number}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/GB/{company_number}/beneficiaires-effectifs
+  price: $0.02
+- route: /v1/eu/entreprise/GB/{company_number}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/GB/{company_number}/marches-publics
+  price: $0.02
+- route: /v1/eu/entreprise/GB/{company_number}/annonces
+  price: $0.02
+- route: /v1/eu/entreprise/LV/{regnr}/comptes
+  price: $0.03
+- route: /v1/eu/entreprise/LV/{regnr}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/LV/{regnr}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/LV/{regnr}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/LV/{regnr}/marches-publics
+  price: $0.02
+- route: /v1/eu/entreprise/LV/{regnr}/associes
+  price: $0.02
+- route: /v1/eu/entreprise/EE/{registrikood}/comptes
+  price: $0.02
+- route: /v1/eu/entreprise/EE/{registrikood}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/EE/{registrikood}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/EE/{registrikood}/associes
+  price: $0.02
+- route: /v1/eu/entreprise/SE/{orgnr}/comptes
+  price: $0.03
+- route: /v1/eu/entreprise/SE/{orgnr}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/SE/{id}
+  price: $0.01
+- route: /v1/eu/entreprise/CZ/{ico}/insolvabilite
+  price: $0.02
+- route: /v1/eu/entreprise/PL/{krs}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/{pays}/{id}
+  price: $0.01
+- route: /v1/eu/facturation/dossier
+  price: $0.03
+- route: /v1/eu/entreprise/{pays}/{id}/marches-publics-ue
+  price: $0.02
+- route: /v1/eu/entreprise/{pays}/{id}/transactions-dirigeants
+  price: $0.02
+- route: /v1/eu/entreprise/NO/{id}/comptes
+  price: $0.02
+- route: /v1/eu/entreprise/NO/{id}/evenements
+  price: $0.02
+- route: /v1/eu/entreprise/NO/{id}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/NO/{id}/etablissements
+  price: $0.01
+- route: /v1/eu/entreprise/DK/{id}/comptes
+  price: $0.01
+- route: /v1/eu/entreprise/DK/{id}/comptes/{date_cloture}
+  price: $0.05
+- route: /v1/eu/entreprise/DK/{cvr}/dirigeants
+  price: $0.01
+- route: /v1/eu/entreprise/SK/{ico}/comptes
+  price: $0.01
+- route: /v1/eu/entreprise/SK/{ico}/comptes/{date_cloture}
+  price: $0.03
+- route: /v1/eu/entreprise/GB/{company_number}/comptes
+  price: $0.01
+- route: /v1/eu/entreprise/GB/{company_number}/comptes/{date_cloture}
+  price: $0.05
+- route: /v1/eu/entreprise/{pays}/{id}/comptes
+  price: $0.01
+- route: /v1/eu/entreprise/{pays}/{id}/comptes/{reference}
+  price: $0.15
+- route: /v1/entreprise/{siren}/documents
+  price: $0.02
+- route: /v1/documents/{type}/{id}
+  price: $0.10
+- route: /v1/facture/verifier
+  price: $0.02
+- route: /v1/facturation/dossier
+  price: $0.03
+- route: /v1/entreprise/{siren}/facturation-prep
+  price: $0.02
+- route: /v1/bodacc/recherche
+  price: $0.03
+- route: /v1/entreprise/{siren}/dossier
+  price: $0.005
+- route: /v1/score/defaillance/{siren}
+  price: $0.10
+- route: /v1/secteur/{code_naf}/benchmarks
+  price: $0.05
+- route: /v1/iban/verifier/{iban}
+  price: $0.005
+- route: /v1/tva/verifier/{numero}
+  price: $0.003
+pricing_by_duration:
+  /v1/surveillance/creer:
+    parameter: duree
+    default: 30
+    unit_price_per_target:
+      '30': $0.05
+      '90': $0.135
+      '365': $0.50
+  /v1/surveillance/{jeton}/renouveler:
+    parameter: duree
+    default: 30
+    unit_price_per_target:
+      '30': $0.05
+      '90': $0.135
+      '365': $0.50
+price_stats:
+  routes: 116
+  min_usd: 0.002
+  max_usd: 1.0
+  median_usd: 0.02

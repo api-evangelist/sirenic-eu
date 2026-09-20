@@ -1,0 +1,138 @@
+generated: '2026-09-19'
+method: probed
+source: https://api.sirenic.eu/.well-known/agent-card.json
+card:
+  file: a2a/sirenic-eu-agent-card.json
+discovery:
+  path: /.well-known/agent-card.json
+  canonical: true
+  host: api.sirenic.eu
+  note: 'Served from the API host. The apex sirenic.eu (and www) answers 308 for every path, including both well-known
+    card paths, redirecting to api.sirenic.eu — so the card is reachable from the apex by redirect, and byte-identical
+    at the legacy /.well-known/agent.json (108,343 bytes both). Ownership is not in question: the card''s provider.organization
+    is Sirenic with provider.url https://api.sirenic.eu, the same host serves the OpenAPI (servers[] https://api.sirenic.eu,
+    contact contact@sirenic.eu), the RFC 9727 api-catalog names this exact URL as ''A2A agent card'', and sirenic-eu/sirenic-examples
+    on GitHub ships examples/a2a.ts against it.'
+x-evidence:
+  fetched: '2026-09-19'
+  url: https://api.sirenic.eu/.well-known/agent-card.json
+  http_status: 200
+  content_type: application/json; charset=utf-8
+  body_bytes: 108343
+  body_parses_as: JSON object with AgentCard shape
+  corroborating_probes:
+  - url: https://api.sirenic.eu/.well-known/agent.json
+    http_status: 200
+    note: legacy path, byte-identical body
+  - url: https://sirenic.eu/.well-known/agent-card.json
+    http_status: 308
+    note: redirects to api.sirenic.eu
+  - url: https://api.sirenic.eu/a2a
+    http_status: 404
+    note: 'GET on the declared JSON-RPC endpoint returns 404 application/json; the surface is POST-only (examples/a2a.ts
+      POSTs SendMessage with A2A-Version: 1.0 and A2A-Extensions: https://github.com/google-a2a/a2a-x402/v0.1).
+      A POST was not attempted because every skill is a paid resource.'
+  - url: https://api.sirenic.eu/.well-known/api-catalog
+    http_status: 200
+    note: RFC 9727 linkset lists the card under service-meta
+agent_card:
+  name: Sirenic
+  description: 'Pay-per-call French & European company data (official registers: INSEE Sirene, INPI RNE, NBB, Zefix
+    and 8 more, plus worldwide entities via LEI/GLEIF). Every skill is a paid HTTP resource: send a JSON data part
+    {"path": "/v1/..."} or {"skill": "<id>", "params": {...}}; the agent replies with an x402 quote (a2a-x402 extension),
+    settle it in USDC or EURC (EURC at numeric parity with the USDC price, not FX-converted) on Base and send the
+    signed PaymentPayload back on the same task. Paying in EURC requires an explicit client opt-in since @x402/core
+    2.23 (spendControls.allowedAssets), otherwise your client silently keeps the USDC option. Set allowedAssets[].maxAmountPerPayment
+    as well (integer ATOMIC amount, e.g. "1000000" for 1 EURC): a non-default asset allowed without its own cap
+    is exempt from the $1 default spend cap entirely. Your x402 client also refuses, by default, any quote above
+    $1.00 per payment (spendControls.maxAmountPerPayment); only GET /v1/kyb/batch (up to $10.50), GET /v1/surveillance/creer
+    (up to $50.00), GET /v1/surveillance/:jeton/renouveler (up to $50.00) can exceed it at full size — each of those
+    skills says so. No account, no API key. Free text is not interpreted.'
+  version: 1.0.0
+  url: https://api.sirenic.eu/a2a
+  protocol_version: '0.3'
+  preferred_transport: JSONRPC
+  documentation_url: https://api.sirenic.eu/llms.txt
+  icon_url: https://api.sirenic.eu/logo.png
+  provider:
+    url: https://api.sirenic.eu
+    organization: Sirenic
+  capabilities:
+    streaming: false
+    push_notifications: false
+    extensions:
+    - https://github.com/google-a2a/a2a-x402/v0.1
+  default_input_modes:
+  - application/json
+  default_output_modes:
+  - application/json
+  - application/pdf
+  supports_authenticated_extended_card: false
+  supported_interfaces:
+  - url: https://api.sirenic.eu/a2a
+    protocolBinding: JSONRPC
+    protocolVersion: '1.0'
+    tenant: ''
+  - url: https://api.sirenic.eu/a2a
+    protocolBinding: JSONRPC
+    protocolVersion: '0.3'
+    tenant: ''
+  security_schemes: null
+  skill_count: 116
+  skill_ids_sample:
+  - /v1/recherche
+  - /v1/entreprise/{siren}
+  - /v1/entreprise/{siren}/etablissements
+  - /v1/entreprise/{siren}/alertes
+  - /v1/entreprise/{siren}/contentieux
+  - /v1/entreprise/{siren}/accords-collectifs
+  - /v1/entreprise/{siren}/capital
+  - /v1/entreprise/{siren}/changements
+  - /v1/entreprise/{siren}/pi
+  - /v1/entreprise/{siren}/finances
+  - /v1/entreprise/{siren}/marches-publics-ue
+  - /v1/entreprise/{siren}/financements-ue
+  skills_note: 116 skills, one per paid HTTP route; skill.id is the OpenAPI path template (e.g. /v1/entreprise/{siren}),
+    each with name, description (price included), tags and examples. The full list is in the saved card.
+conformance:
+  spec: A2A 1.0.0
+  grade: conformant
+  protocol_version: '0.3'
+  preferred_transport: JSONRPC
+  transport: JSONRPC
+  hard_checks:
+    capabilities_is_object: true
+    protocol_version_present: true
+    skills_is_array: true
+  optional_fields:
+    default_input_modes: true
+    default_output_modes: true
+    preferred_transport: true
+  grade_basis: capabilities is an OBJECT (streaming, pushNotifications, extensions[]); protocolVersion is present
+    at the top level ('0.3'); skills is an ARRAY of 116 fully-populated skills. All three optional discriminators
+    (preferredTransport, defaultInputModes, defaultOutputModes) are present, and the card additionally carries the
+    1.0-shaped supportedInterfaces[]. No hard check fails.
+  deviations:
+  - field: protocolVersion
+    observed: '''0.3'' at the top level while the SDK example and the A2A-Version header say 1.0'
+    note: The card keeps the 0.3-era top-level triple (url/preferredTransport/protocolVersion) AND declares supportedInterfaces[];
+      a 1.0 reader will use the latter, a 0.3 reader the former. Dual-shaped rather than out of spec.
+  - field: capabilities.extensions[0]
+    observed: https://github.com/google-a2a/a2a-x402/v0.1
+    note: 'Every skill is a PAID resource: a first SendMessage returns an input-required task carrying an x402 quote
+      in status.message.metadata["x402.payment.required"]; the signed PaymentPayload goes back on the same task.
+      An agent without an x402-capable wallet (or an srn_live_ API key) cannot complete any skill.'
+  - field: securitySchemes
+    observed: absent
+    note: No card-level security scheme; access is payment (x402) rather than authentication. The API-key alternative
+      (X-Api-Key srn_live_) is documented in the OpenAPI, not in the card.
+  - field: skills
+    observed: 116 skills whose ids are OpenAPI path templates
+    note: The A2A surface is a 1:1 projection of the paid REST routes (116 of the 125 OpenAPI operations; the 9
+      free/utility routes are not skills).
+surface_relationship:
+  note: Sirenic publishes REST (125 GET operations at https://api.sirenic.eu, OpenAPI at /openapi.json), a remote
+    MCP server (POST https://api.sirenic.eu/mcp, streamable HTTP, manifest at /.well-known/mcp.json; OAuth connector
+    variant at /mcp/connecteur) and this A2A agent (POST https://api.sirenic.eu/a2a). All three are projections
+    of the same 116 paid routes and share the x402 / API-key payment rails; the api-catalog (RFC 9727) links every
+    one of them.

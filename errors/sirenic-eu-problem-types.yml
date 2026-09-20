@@ -1,0 +1,96 @@
+generated: '2026-09-19'
+method: derived
+format: sirenic-error-object
+rfc9457: false
+source: Derived from the 4xx/5xx responses of all 125 operations in openapi/sirenic-eu-openapi.yml (components.responses
+  Reponse400InvalidInput, Reponse402PaymentRequired, Reponse503LocalRegister + per-operation descriptions), enriched
+  from llms.txt ("What you are charged for", "How to use") and the privacy/security statements. The spec defines
+  no error schema (components.schemas is empty); the envelope shape is read from the response descriptions.
+envelope:
+  media_type: application/json
+  shape: '{ "error": <snake_case code>, "champ": <field, on 400>, "message": <text> } — 402 additionally carries
+    the x402 v2 quote {x402Version, accepts[]} in the body and the PAYMENT-REQUIRED header; 404 on unknown routes
+    is the 23-byte {"error":"not_found"} body'
+  billing_rule: 'Any non-2xx response (400, 402, 404, 5xx) is never charged: the x402 payment is cancelled before
+    settlement and credits are not debited. 405 is returned for any method other than GET/OPTIONS on /v1 before
+    the handler runs.'
+status_coverage:
+  '200': 125
+  '400': 118
+  '401': 1
+  '402': 116
+  '404': 109
+  '406': 1
+  '410': 1
+  '429': 1
+  '502': 2
+  '503': 86
+problems:
+- status: 400
+  title: Invalid input
+  code: (varies, with champ)
+  meaning: 'Body {error, champ, message}. Search parameters are cleaned, not rejected: a 400 only comes back when
+    nothing searchable is left after stripping unsupported characters. Never charged.'
+  operations: 118
+- status: 401
+  title: Account required
+  code: —
+  meaning: 'GET /v1/documents/{type}/{id} with type=actes and no identified Sirenic account (X-Api-Key): legal deeds
+    are reserved to accounts since 2026-09-19 because they carry personal data. No payment is requested.'
+  operations: 1
+- status: 402
+  title: Payment required
+  code: x402 quote | credits_insuffisants
+  meaning: 'Without payment or key: x402 payment requirements (price, asset, payTo, network eip155:8453) in body
+    and PAYMENT-REQUIRED header — sign and retry with PAYMENT-SIGNATURE. With an API key and insufficient balance:
+    {error: credits_insuffisants} WITHOUT a quote header.'
+  remediation: Sign the quote with an x402 client (@x402/fetch) or top up credits at https://api.sirenic.eu/compte;
+    raise spendControls.maxAmountPerPayment for /v1/kyb/batch, /v1/surveillance/creer and …/renouveler, whose full-size
+    quotes exceed the $1.00 default client cap.
+  operations: 116
+- status: 404
+  title: Not found
+  code: not_found
+  meaning: No diffusible company / entity for this identifier (e.g. "No diffusible company for this SIREN"), or
+    an unknown route. Never charged.
+  operations: 109
+- status: 405
+  title: Method not allowed
+  code: —
+  meaning: 'Any method other than GET or OPTIONS on a /v1 path; Allow: GET, OPTIONS. Returned before any body is
+    read; nothing is charged. (llms.txt; not declared per operation in the spec.)'
+- status: 406
+  title: Not acceptable
+  code: —
+  meaning: BE annual accounts with format=json when the NBB publishes that filing only as PDF — call again with
+    format=pdf. Payment cancelled.
+  operations: 1
+- status: 410
+  title: Gone
+  code: —
+  meaning: 'Watchlist renewal after the grace period: the watch has been purged. Payment cancelled.'
+  operations: 1
+- status: 429
+  title: Free quota exhausted
+  code: —
+  meaning: 'Only on the free GET /v1/suggestions: 2,000 calls per day per IP, or 60 per minute. The paid GET /v1/recherche
+    has no such quota.'
+  operations: 1
+- status: 502
+  title: Upstream error
+  code: forme_juridique_non_reconnue | (NO banks/insurers)
+  meaning: An upstream official register answered in a way that prevents an assertion (e.g. banks and insurers are
+    not served by the open Norwegian accounts API; a Czech ARES legal form off the allow-list). Payment cancelled.
+  operations: 2
+- status: 503
+  title: Source unavailable
+  code: recherche_indisponible | amont_indisponible | collecte_en_cours | photo_perimee
+  meaning: The local index/register is degraded or its snapshot older than the country freshness threshold, and
+    the real-time registry is down. A degraded answer is never sold as complete. Nothing charged; retry in a few
+    seconds (or, for photo_perimee, retrying does not help until the next collection).
+  operations: 86
+degradation_semantics:
+  note: 'A 200 can still be PARTIAL and says so: resultats_partiels / etages_abandonnes on search, blocs_absents
+    with closed-list reasons (aucune_donnee, non_diffusible, panne_amont) on /dossier, and the per-block provenance[].etat
+    vocabulary (servi, absence_mesuree, absence_non_conclusive, partiel, perime, indisponible, sans_objet) on every
+    paid JSON route since 2026-09-06. The reading rules are served free at GET /v1/lecture.'

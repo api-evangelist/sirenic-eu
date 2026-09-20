@@ -1,0 +1,50 @@
+generated: '2026-09-19'
+method: searched
+source: https://api.sirenic.eu/openapi.json (paths, info.version, dated route notes), https://api.sirenic.eu/llms.txt,
+  https://api.sirenic.eu/.well-known/api-catalog (status relation → /healthz), https://api.sirenic.eu/.well-known/security.txt
+  (Expires), n8n-nodes-sirenic CHANGELOG 0.12.0 (route removals observed against the live grid).
+versioning:
+  scheme: URI path
+  current: v1
+  mechanism: all routes under /v1; info.version 1.0.0; no version header or date pinning
+  docs: https://api.sirenic.eu/openapi.json
+  notes: 'Change is communicated in-band: route descriptions carry dated notes ("documented here since 2026-09-04",
+    "legal deeds reserved to accounts since 2026-09-19", "provenance on every JSON route since 2026-09-06") and
+    the free /exemples/*.json samples are dated.'
+deprecation:
+  policy_url: null
+  sunset_header: false
+  deprecation_header: false
+  notes: 'No published deprecation policy and no RFC 8594 headers. Observed behaviour (third-party evidence, the
+    provider''s own n8n changelog 0.12.0, 2026-09-19): /v1/entreprise/{siren}/liens-capitalistiques disappeared
+    from the grid and answers 404 without a replacement route or notice; the changelog also records the price of
+    /v1/recherche as $0.001 in an older samples README versus $0.002 in the live spec. Deprecation is silent removal.'
+sla:
+  url: null
+  public_uptime_target: null
+  notes: 'No SLA published. The commitment stated is financial, not availability: any non-2xx is never charged;
+    503 says "retry in a few seconds" and 502/503 name the upstream register at fault.'
+status_page: null
+health_endpoint: https://api.sirenic.eu/healthz (JSON; linked as "Statut" in the site footer and as the RFC 9727
+  status relation)
+status_note: A health check is not an incident/uptime status page; no StatusPage pointer is emitted.
+security_txt_expires: '2027-09-04'
+data_freshness:
+  note: 'Freshness is per source and stated in every response (data_freshness, provenance[].as_of + precision_as_of):
+    monthly Sirene stock, real-time officers/registry fallback, daily watch checks, country thresholds (e.g. Sweden
+    21 days → 503 photo_perimee).'
+deprecated_operations: []
+deprecated_products: []
+timeline:
+- date: '2026-07-17'
+  event: GitHub org sirenic-eu created
+- date: '2026-07-23'
+  event: sirenic-agents 0.1.0 (LangChain tools) on npm
+- date: '2026-07-28'
+  event: n8n-nodes-sirenic first release; Product Hunt launch (July 2026)
+- date: '2026-09-04'
+  event: watch-token signature semantics documented; security.txt issued (Expires 2027-09-04)
+- date: '2026-09-06'
+  event: provenance[] on every paid JSON route
+- date: '2026-09-19'
+  event: legal deeds (type=actes) gated to accounts; n8n node 0.12.0/0.13.0 (API-key rail)

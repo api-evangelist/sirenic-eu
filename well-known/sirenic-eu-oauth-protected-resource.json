@@ -1,0 +1,1 @@
+{"resource":"https://api.sirenic.eu","authorization_servers":["https://api.sirenic.eu"],"scopes_supported":["mcp"],"bearer_methods_supported":["header"],"resource_name":"Sirenic MCP","resource_documentation":"https://api.sirenic.eu/"}

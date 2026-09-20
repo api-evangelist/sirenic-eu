@@ -1,0 +1,160 @@
+generated: '2026-09-19'
+method: searched
+status: published
+source: https://api.sirenic.eu/.well-known/mcp.json (fetched 2026-09-19, saved well-known/sirenic-eu-mcp.json);
+  https://api.sirenic.eu/llms.txt; sirenic-eu/sirenic-examples/examples/mcp-setup.md; sirenic-eu/sirenic-gemini-extension/gemini-extension.json;
+  RFC 8414/9728 discovery documents
+description: 'Can you safely invoice or pay this company? Verify a supplier before payment in one call — legal identity,
+  VAT checked live against VIES, IBAN form-checked with its bank identified from official registries, and a deterministic
+  ready-to-invoice verdict (French e-invoicing mandate: 1 September 2026; Belgium since 1 January 2026; Poland''s
+  White List account check). Plus French & European company data for AI agents: France in depth (INSEE Sirene /
+  INPI RNE) with profiles, officers, financials, share capital, default scoring, sanctions screening and documents;
+  European search & profiles (Belgium, Switzerland, UK, Norway, Estonia, Latvia, Czechia, Slovakia, Finland, Poland),
+  Spanish registry acts (BORME) and worldwide entities via LEI/GLEIF. Paid per call in USDC or EURC via the x402
+  protocol. Start for free: suggest_company_names turns a French company name into its SIREN (no account, no API
+  key, no payment).'
+deployment:
+  mode: remote
+  endpoint: https://api.sirenic.eu/mcp
+  endpoint_oauth: https://api.sirenic.eu/mcp/connecteur
+  install: null
+  package: null
+  auth: none
+  auth_note: Anonymous connect and tools/list on /mcp; each tool returns an x402 quote until called with x_payment
+    (signed payment) or api_key (srn_live_). The /mcp/connecteur variant is OAuth 2.0 (authorization_code + PKCE,
+    dynamic client registration, scope mcp) against the account's free quota then credits — this is the RFC 9728
+    protected resource "Sirenic MCP".
+  verified: probed
+  verification: GET https://api.sirenic.eu/mcp → 405 application/json (POST-only JSON-RPC endpoint exists); manifest
+    fetched 200 with transport.url naming this exact endpoint; POST tools/list not completed — host refused TCP
+    from the probing IP after the initial burst.
+server:
+  name: sirenic
+  display_name: Sirenic
+  version: 1.0.0
+  transport: streamable-http
+  url: https://api.sirenic.eu/mcp
+  capabilities:
+    tools: true
+  icon: https://api.sirenic.eu/logo.png
+  documentation: https://api.sirenic.eu/llms.txt
+  server_card: https://api.sirenic.eu/mcp/server-card (SEP-2127, named in the api-catalog)
+  ai_catalog: https://api.sirenic.eu/.well-known/ai-catalog.json
+  protected_resource: well-known/sirenic-eu-oauth-protected-resource.json
+  authorization_server: well-known/sirenic-eu-oauth-authorization-server.json
+  dns_identity: TXT sirenic.eu "v=MCPv1; k=ed25519; p=…" — an MCP server key published in DNS
+  registry_listings:
+  - https://smithery.ai/servers/contact-erkc/sirenic
+  - https://x402-list.com/services/sirenic
+payment:
+  protocol: x402
+  network: eip155:8453
+  asset: USDC
+  assets:
+  - symbol: USDC
+    contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  - symbol: EURC
+    contract: '0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42'
+  api_key_alternative:
+    argument: api_key
+    key_format: srn_live_…
+    unit: 1 credit = 1 EUR, same per-call prices
+    validity: credits expire 12 months after purchase; the ones closest to expiry are spent first
+    signup: https://api.sirenic.eu/compte
+    free_quota: 150 calls/month on routes <= $0.05 with a verified account
+client_configs:
+  claude_code: claude mcp add --transport http sirenic https://api.sirenic.eu/mcp
+  cursor: '{"mcpServers":{"sirenic":{"url":"https://api.sirenic.eu/mcp"}}}'
+  gemini_cli: gemini extensions install https://github.com/sirenic-eu/sirenic-gemini-extension  (uses /mcp/connecteur,
+    OAuth)
+tool_count: 77
+tool_count_source: gemini-extension.json (2026-09-03) — "77 tools"; examples/mcp-setup.md (July 2026) listed 25
+tools:
+- name: search_french_companies
+  category: search
+  rest: /v1/recherche
+- name: suggest_company_names
+  category: search
+  rest: /v1/suggestions
+- name: detect_company_identifiers
+  category: utility
+  rest: /v1/reperer
+- name: get_french_company_profile
+  category: lookup
+  rest: /v1/entreprise/{siren}
+- name: get_french_company_kyb_file
+  category: kyb
+  rest: /v1/kyb/{siren}
+- name: get_french_company_kyb_batch
+  category: kyb
+  rest: /v1/kyb/batch
+- name: screen_sanctions_lists
+  category: compliance
+  rest: /v1/sanctions/check
+- name: get_french_company_financials
+  category: financials
+  rest: /v1/entreprise/{siren}/finances
+- name: get_french_company_default_risk
+  category: risk
+  rest: /v1/score/defaillance/{siren}
+- name: get_french_sector_benchmarks
+  category: risk
+  rest: /v1/secteur/{code_naf}/benchmarks
+- name: get_french_company_capital
+  category: ownership
+  rest: /v1/entreprise/{siren}/capital
+- name: get_french_company_capital_links
+  category: ownership
+  rest: null
+- name: get_french_company_accounts_notes
+  category: financials
+  rest: null
+- name: get_french_company_intellectual_property
+  category: ip
+  rest: /v1/entreprise/{siren}/pi
+- name: get_french_company_legal_alerts
+  category: compliance
+  rest: /v1/entreprise/{siren}/alertes
+- name: get_french_company_changes
+  category: monitoring
+  rest: /v1/entreprise/{siren}/changements
+- name: search_french_company_directors
+  category: people
+  rest: /v1/dirigeant/recherche
+- name: get_french_company_health_summary
+  category: risk
+  rest: /v1/entreprise/{siren}/sante
+- name: search_european_companies
+  category: search
+  rest: /v1/eu/recherche
+- name: get_french_company_pdf_report
+  category: reporting
+  rest: /v1/rapport/{siren}
+- name: prepare_french_invoice_file
+  category: invoicing
+  rest: /v1/facturation/dossier
+- name: validate_eu_vat_number
+  category: invoicing
+  rest: /v1/tva/verifier/{numero}
+- name: verify_iban_bank
+  category: invoicing
+  rest: /v1/iban/verifier/{iban}
+- name: check_french_regulator_alerts
+  category: compliance
+  rest: /v1/regulateurs/fr/alertes
+- name: get_french_company_public_procurement
+  category: procurement
+  rest: /v1/entreprise/{siren}/marches-publics
+- name: find_expiring_french_public_contracts
+  category: procurement
+  rest: /v1/marches/expirations
+- name: get_french_public_buyer_profile
+  category: procurement
+  rest: /v1/acheteur/{siret}/profil
+- name: get_french_company_intelligence
+  category: kyb
+  rest: /v1/intelligence/{siren}
+tools_note: Names published by the provider in its own repos; descriptions and inputSchema require a live tools/list,
+  which was not captured (see deployment.verification). Every tool accepts optional x_payment and api_key arguments.
+  suggest_company_names and detect_company_identifiers are free.
+crosswalk: mcp/sirenic-eu-tool-crosswalk.yml

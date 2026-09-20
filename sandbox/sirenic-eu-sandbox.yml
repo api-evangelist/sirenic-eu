@@ -1,0 +1,52 @@
+generated: '2026-09-19'
+method: searched
+source: https://api.sirenic.eu/llms.txt ("Free endpoints"), https://api.sirenic.eu/openapi.json (/v1/demo/entreprise,
+  /preview/…, /v1/suggestions, /v1/reperer), https://github.com/sirenic-eu/sirenic-examples (examples/quote.sh,
+  examples/responses/), n8n-nodes-sirenic README (Dry Run)
+description: 'Sirenic has no separate sandbox environment or test-mode keys: there is one production host and the
+  spend-free rehearsal path is built into the protocol. A call without payment returns the exact x402 quote (price,
+  asset, payTo) and costs nothing — that IS the dry run — and a set of free routes returns real, signed responses
+  so a client can validate parsing and signature verification before spending.'
+modes:
+- name: quote-only (dry run)
+  how: 'Call any /v1 route with no PAYMENT-SIGNATURE and no key: 402 with the signable quote in body + PAYMENT-REQUIRED
+    header. Nothing is settled. MCP tools do the same when called without x_payment (quote in structuredContent.quote).
+    The n8n node exposes this as a Dry Run option reporting would_pay_usd.'
+- name: live
+  how: Same routes with a signed x402 payment or an srn_live_ key. Only 2xx responses are charged.
+key_formats:
+  api_key: srn_live_…
+  watch_token: sw_<uuid>.<timestamp>.<Ed25519 signature>
+free_endpoints:
+- path: GET /v1/demo/entreprise?siren=552032534
+  note: FREE DEMO of GET /v1/entreprise/{siren} — same middlewares and Ed25519 signature as a paid call; two fixed
+    SIREN only (552032534 Danone, 652014051), cached 24 h, plus a _demo note
+- path: GET /preview/entreprise/55203253400646
+  note: free sample of the full-profile response
+- path: GET /v1/suggestions?q=danone
+  note: company-name autocomplete → SIREN, max 5 results; 2,000/day/IP
+- path: GET /v1/reperer?texte=…
+  note: detects SIREN/SIRET/VAT/LEI in raw text and returns the recommended paid call with its price
+- path: GET /v1/lecture
+  note: 'reading dictionary: provenance[].etat states, closed lists, reading rules'
+- path: GET /v1/provenance/registres
+  note: provenance dictionary for source_code
+- path: GET /v1/surveillance/{jeton}
+  note: watchlist status — the token is the capability
+- path: GET /v1/surveillance/{jeton}/arreter
+  note: stop + purge a watchlist, free
+- path: GET /exemples/<route>.json
+  note: one real, dated, truncated paid response per priced route (the landing page links each); same samples ship
+    in the OpenAPI response examples and in the x402 quote extensions.bazaar.info.output.example
+- path: GET /healthz
+  note: health check
+test_identifiers:
+  siren_demo:
+  - '552032534'
+  - '652014051'
+  siret_preview: '55203253400646'
+  note: Published by the provider as demo values; both are real companies (the demo route serves the real profile).
+test_wallet:
+  note: 'sirenic-examples README "Test wallet setup": a client-side Base mainnet wallet holding a few USDC; there
+    is no Sirenic test network — payments are real, so the provider recommends a dedicated low-balance wallet plus
+    the x402 client spend cap.'

@@ -1,0 +1,676 @@
+# Sirenic
+
+> Pay-per-call API for French & European company data. France in depth (INSEE
+> Sirene / INPI RNE open data, Etalab 2.0 license — 25 datasets); European
+> search & profiles (Belgium, Switzerland, UK, Norway, Estonia, Latvia, Lithuania, Croatia, Czechia, Slovakia, Finland, Poland), Spanish
+> registry acts (BORME, by hoja registral) and worldwide
+> entities via LEI/GLEIF — every profile also carries groupe_lei, the GLEIF
+> level-2 consolidating parents (or the declared reason for none). AI agents pay per request in USDC or EURC (same
+> numeric amount in either) on base via the x402 protocol
+> (HTTP 402). No account, no API key.
+
+## How to use
+
+1. Call any /v1 endpoint. Without payment you get HTTP 402 with x402 payment
+   requirements (price, USDC asset, pay-to address, network eip155:8453).
+2. Sign the payment with an x402 client (e.g. npm package @x402/fetch) and
+   retry with the PAYMENT-SIGNATURE header. The response is released once the
+   facilitator confirms settlement.
+3. GET is the only method served on /v1 paths — every one of them, paid or
+   free (the CORS preflight OPTIONS aside). Any other method (HEAD, POST, PUT,
+   DELETE…) gets 405 with `Allow: GET, OPTIONS`, before any body is read: the
+   handler never runs, no upstream call is made and nothing is charged.
+
+## What you are charged for
+
+Toute réponse non-2xx (400, 402, 404, 5xx) n'est jamais facturée : le paiement x402 est annulé avant règlement — le transfert n'a pas lieu, il n'y a donc rien à rembourser. / Any non-2xx response is never charged: the x402 payment is cancelled before settlement — the transfer never happens, so there is nothing to refund.
+
+## Spend controls on YOUR side (x402 clients since @x402/core 2.23)
+
+Your x402 client refuses, by default and BEFORE signing, any quote above
+$1.00 per payment (spendControls.maxAmountPerPayment). We never see
+that refusal. Every route is priced at or under the cap for a single unit; the only
+quotes that can exceed it are the per-unit routes at full size: `GET /v1/kyb/batch` (up to $10.50), `GET /v1/surveillance/creer` (up to $50.00), `GET /v1/surveillance/:jeton/renouveler` (up to $50.00). Raise
+spendControls.maxAmountPerPayment (or set spendControls: false) before calling
+them with many units — each of those routes repeats the warning in its line
+below, in its 402 body (pricing_note) and in its OpenAPI x-price.
+Paying in EURC requires an explicit client opt-in since @x402/core 2.23 (spendControls.allowedAssets), otherwise your client silently keeps the USDC option. Set allowedAssets[].maxAmountPerPayment as well (integer ATOMIC amount, e.g. "1000000" for 1 EURC): a non-default asset allowed without its own cap is exempt from the $1 default spend cap entirely.
+
+## Human- and agent-readable guides (free)
+
+Every page below is served in HTML **and** in Markdown — append .md to any of
+these paths, or send the header Accept: text/markdown. Bilingual FR/EN with reciprocal
+hreflang. No payment, no key.
+
+- https://api.sirenic.eu/cas-usage — 15 use-case guides in French (https://api.sirenic.eu/en/use-cases in English):
+  verify a supplier before payment, monitor a portfolio, screen a counterparty,
+  anticipate public-contract expiries, European company data.
+- https://api.sirenic.eu/comparatif — 6 dated, sourced comparisons in French
+  (https://api.sirenic.eu/en/compare in English) against Pappers, Societe.com, Infogreffe,
+  API Entreprise, the INPI register and the free public search API. Each one
+  starts with what the other service does better, and two of them recommend not
+  choosing us.
+- https://api.sirenic.eu/api — one reference page per priced route (https://api.sirenic.eu/en/api in English):
+  price from the live grid, an extract of a genuinely paid response with its
+  as-of date, the expected identifier format, and what the route does NOT do.
+- https://api.sirenic.eu/articles — a single index of everything we have written
+  (https://api.sirenic.eu/en/articles in English).
+
+The landing page itself is served in one language per URL:
+https://api.sirenic.eu/ in French, https://api.sirenic.eu/en in English, with reciprocal hreflang.
+
+Full list of the 291 URLs: https://api.sirenic.eu/sitemap.xml
+
+## Endpoints
+
+- `GET /v1/recherche` ($0.002): French company search and company lookup by name or SIREN in the official French company registry (INSEE Sirene / INPI RNE open data). Name search returns the top 10 matches with identity, SIREN, NAF code, city and active/ceased status, plus a score_confiance (0-1 match confidence) that helps disambiguate homonyms. The entry point to official data and company data on France: resolve a trading name to its SIREN identifier before pulling the full company profile, filings or financials.
+- `GET /v1/entreprise/:siren` ($0.005): Full French company profile by SIREN: official company data from the French company registry (INSEE Sirene / INPI RNE). One lookup returns legal name, legal form, head office, NAF code, workforce bracket, creation date, active or ceased status, officers with name and role, collective agreement, the intra-EU VAT number and, for LEI holders, the GLEIF level-2 group (groupe_lei: consolidating parents or declared reason for none). The core KYB building block for verifying a French counterparty.
+- `GET /v1/entreprise/:siren/etablissements` ($0.003): All establishments (SIRET) of a French company: the complete list of business locations registered under one SIREN, official data from the French company registry (INSEE Sirene), head office and branches alike, each with its address and open or closed status. Use it to map the branches and addresses of a company across France, or to check whether a given SIRET is still open. The SIREN identifies the legal entity; the SIRET identifies each of its establishments.
+- `GET /v1/entreprise/:siren/alertes` ($0.01): Legal alerts for a French company from BODACC, the official French gazette of legal notices: insolvency proceedings (procedures collectives) and related court filings, deregistrations and business sales, grouped and most recent first. Check whether a French company is subject to collective proceedings before you contract — a due diligence, KYB and compliance signal for supplier onboarding and risk monitoring, drawn from official registry data.
+- `GET /v1/entreprise/:siren/contentieux` ($0.01): Commercial-court decisions linked to a French company (SIREN), from the Cour de cassation open data (Judilibre): counts, closed-list nature (insolvency judgment, order to pay, summary proceedings, expert appraisal, other dispute), the company's role, the other companies involved (SIREN only) and the official link to each decision. No text, no individual's name, no amount. Partial, measured coverage (about 62% of decisions carry a usable identifier): no result never means no litigation.
+- `GET /v1/entreprise/:siren/accords-collectifs` ($0.02): Company-level collective agreements of a French company published on Légifrance (ACCO fund, mandatory since 2017-09-01): title, nature (accord, avenant), DILA themes (pay, working time, telework, gender equality, profit-sharing...), signature, effect and end dates, collective-agreement code (IDCC) checked against Sirene, signatory unions and the official link. Metadata only, never the text nor a person's name. Searched by filing SIRET (up to 25 establishments), cached 24h.
+- `GET /v1/entreprise/:siren/capital` ($0.35): Ownership and share capital of a French company from the official INPI registry: AI extraction of the latest PUBLIC articles of association — share capital amount, legal form, shareholders (CORPORATE holders named with role and %; natural persons COUNTED with their %, never named — GDPR, since 2026-09-19), notable clauses, confidence level and source document. From public filed deeds — NOT a beneficial-ownership register (RBE) nor a beneficial-owner identification. Extracted once, cached.
+- `GET /v1/entreprise/:siren/changements` ($0.01): Company changes monitoring for a French company: the new official BODACC gazette announcements published SINCE a given date (?depuis=YYYY-MM-DD) — the poll endpoint for watchlist and portfolio surveillance. Returns the new announcements (insolvency, deregistration, sales, filings, changes) in reverse-chronological order. Note: detects new BODACC publications, not field-level edits of the Sirene/RNE profile (the monthly stock keeps no history).
+- `GET /v1/entreprise/:siren/pi` ($0.03): Intellectual property portfolio of a French company from official INPI open data: patents, trademarks and designs — counts plus items with number, title/label, status, ISO dates (trademark filing/registration/expiry, patent publication) and classification (Nice/CIB/Locarno). Designs: one line per filing. An R&D / brand-value signal for due diligence. Trademarks and designs are most-recent-first; patents are NOT sorted upstream (liste_ordre). Inventor names are never returned.
+- `GET /v1/entreprise/:siren/finances` ($0.01): Financials of a French company (annual accounts filed at INPI, Banque de France ratios): revenue, EBITDA, net income, debt, financial autonomy — ONE row per fiscal year, each graded (qualite: exploitable / a_verifier / non_exploitable, anomalies, doubtful fields); source rows set aside are served in exercices_ecartes with their reason. Consolidated accounts are served apart and graded the same way. Includes the INPI-keyed tax-form line items (up to 20 years) and a perimetre_comptable block.
+- `GET /v1/entreprise/:siren/marches-publics-ue` ($0.02): European public procurement contract awards won by a French company, from TED (Tenders Electronic Daily, EU Publications Office): government contracts and tenders — buyer, country, subject, notice-level amount, CPV codes, co-winners and official notice link. Identifier-based matching only (SIREN/SIRET incl. spaced variants). Coverage: eForms award notices since 2023-10-25, above EU thresholds; ~57% of award notices carry a usable national identifier — an empty list is not proof of absence.
+- `GET /v1/entreprise/:siren/financements-ue` ($0.02): EU research and innovation funding received by a French company, from CORDIS (European Commission): every Horizon 2020 (2014-2020) and Horizon Europe (2021-2027) project the company appears in — role (coordinator, participant, associated partner, third party), EU contribution, total cost, dates, project status and official CORDIS link — with totals. Matched by the VAT number CORDIS publishes (about 90% of French participations): zero is a non-conclusive absence. Facts, never a score.
+- `GET /v1/entreprise/:siren/marches-publics` ($0.01): Government contracts won by a French company, from the official DECP open data: buyers, dates, procedures, estimated end date, lot number, joint holders, CCAG, price type, advance, amendments, declared subcontracting. Each amount is per contract or LOT, excl. VAT, over its full duration, flagged firm price or ENVELOPE (call-offs, framework ceiling — 43% of rows). Totals as two bounds: raw, and deduplicated when one award is published twice. Awarded contracts, not open calls.
+- `GET /v1/marches/expirations` ($0.05): Upcoming French public-contract EXPIRATIONS — the predictive layer over DECP open data: contracts whose estimated end date falls inside your window (fenetre_mois, 1-24 months), filterable by CPV prefix (cpv=45) and department, with buyer, incumbent holders, lot number, declared subcontracting, and amounts flagged firm price or ENVELOPE (call-offs, subsequent contracts, tranches, framework ceiling). Buyers re-tender 4 to 9 months before expiry: anticipation BEFORE publication. 50 per page.
+- `GET /v1/acheteur/:siret/profil` ($0.02): Procurement profile of a French public buyer (SIRET): contract counts and amounts, activity by year, top CPV segments, incumbent suppliers ranked with their contracts expiring within 18 months, framework-agreement share, average bids received per tender (competitive intensity) and median data-publication delay — the buying habits a bidder wants before a sourcing meeting. From DECP open data.
+- `GET /v1/entreprise/:siren/concurrents-marches` ($0.02): Who wins French public contracts on the SAME CPV segments as a given company (SIREN): top rival contractors over the last 3 years, with contract counts, total amounts and shared segments — competitive intelligence for public-procurement bidding, from DECP open data. The company's own top-5 CPV segments (last 5 years) define the comparison scope.
+- `GET /v1/entreprise/:siren/sante` ($0.15): Company health check for a French company: a bilingual risk read-out — verdict, strengths, warning signs, activity trend and confidence level — from official data only (identity, BODACC alerts, filed financials, sanctions screening). A model fills a closed evaluation grid; every figure, date and sentence is assembled by Sirenic, and guards overrule it when the accounts disagree. Entities filing no accounts get an explicit no-conclusion verdict. For KYB and due diligence. Cached 7 days.
+- `GET /v1/kyb/batch` ($0.105): Batch KYB and bulk company lookup: full Know Your Business files for 2 to 100 French companies in one call (comma-separated sirens parameter) — bulk due diligence, compliance and onboarding screening of a whole portfolio, each file with per-block provenance (official register + as-of date). Billed per company at $0.105 (30% off the $0.15 unit price); the amount is quoted from the number of SIREN. A SIREN with no diffusible company is returned as trouve=false and billed as one lookup. A full-size request quotes up to $10.50, above the $1.00 single-payment cap that x402 clients apply BY DEFAULT since @x402/core 2.23 (spendControls): raise spendControls.maxAmountPerPayment, or set spendControls: false, before signing — otherwise your own client rejects the quote without ever calling us.
+- `GET /v1/comparer` ($0.12): Company comparison: compare 2 to 5 French companies side by side in one call on official company data — identity, deterministic default-risk score, latest filed accounts (statutory scope) and BODACC insolvency alerts. Benchmarking for supplier selection and vendor shortlist: per-axis rankings, never an overall winner, plus a comparabilite block that flags NOT comparable companies (different sectors, sizes, a holding in the batch). Billed PER COMPANY: signed quote = $0.12 x number of SIREN.
+- `GET /v1/kyb/:siren` ($0.15): Company lookup KYB — Know Your Business verification of a French company in one call: official company data for due diligence, compliance and customer onboarding: identity, officers, BODACC legal alerts (insolvency, deregistration), filed financials, sanctions screening of the company and each officer against the 6 official lists, computed VAT number and a completeness score. Per-block provenance: every block states its official register and as-of date.
+- `GET /v1/sanctions/check` ($0.02): Sanctions screening (AML/KYC): screen a person or company name against 6 official watchlist sources — UN consolidated, EU FSF, US OFAC SDN, UK Sanctions List, French national asset-freeze register, Swiss SECO list — six official lists in one call. Fuzzy watchlist matching with a 0-100 confidence score per hit — never a bare yes/no. Each list reports its entry count, publication date and what that date means. One AML screening call covers UN, EU, OFAC, UK, FR and CH.
+- `GET /v1/regulateurs/fr/alertes` ($0.01): French financial regulator alerts and scam check against the official AMF blacklist: screen a name for unauthorized investment websites, scams and AMF impersonation, and look up PSAN crypto provider registrations and licensed asset management companies (SGP) by name or SIREN. A compliance screening of the regulator blacklists for agents vetting French counterparties in crypto and asset management. Official AMF open data (Licence Ouverte 2.0), refreshed daily.
+- `GET /v1/entreprise/:siren/risques-industriels` ($0.01): Industrial risk and environment profile of a French company from the official ICPE register (Géorisques/DGPR): classified facilities with Seveso status (upper/lower tier), authorisation regime, activity state, IED flag, nomenclature rubrics and a risk synthesis per SIREN — an ESG and environmental compliance signal on hazardous sites operated by the company. A company with no classified facility returns level aucun (still 200) — the clean answer is the signal.
+- `GET /v1/entreprise/:siren/agrements` ($0.02): Regulatory authorisation and licences held by a French company, by SIREN: payment institution, e-money institution, account-information provider, payment agent or exempt entity from the EBA PSD2 register (daily), insurance undertaking from EIOPA, telecom operator (electronic-communications operator, ARCEP). Returns authorisation dates, licensed PSD2 services, EEA passporting and withdrawals — a compliance check across three official registers. Not authorised is a paid answer too (200).
+- `GET /v1/association/:rna` ($0.005): Official profile of a French association (loi 1901) by RNA number (W + 9), from the RNA register (Ministry of the Interior, monthly): title, purpose and Waldec codes, nature, grouping, position (active/dissolved/deleted), creation, declaration, JO publication and dissolution dates, registered office, website, RUP number as declared, prefecture, and the SIREN when Sirene confirms it (categorie juridique 92xx). Covers associations WITHOUT a SIREN. No officer data. Excludes Alsace-Moselle.
+- `GET /v1/associations/recherche` ($0.002): Search French associations (loi 1901) by name in the Répertoire national des associations (RNA, Ministry of the Interior): trigram similarity on the normalised title, optional postal-code, department and position filters (active, dissoute, supprimee), top 20 with score_confiance and the RNA number to use on /v1/association/{rna}. Associations with AND without a SIREN; the legacy file (no declaration since 2009) is flagged fichier_source: import. Excludes Alsace-Moselle (local law).
+- `GET /v1/association/:rna/annonces` ($0.01): Official Journal notices of a French association (JOAFE, DILA) by RNA number: creations, modifications (title, purpose, registered office), dissolutions, corrections — the association equivalent of BODACC notices, most recent first, with issue date, declaration date and prefecture, purpose themes and the PDF file name. Carries `couverture` (first and last loaded issue): no notice inside that window is a fact, not a gap. Weekly issue, loaded every Tuesday.
+- `GET /v1/entreprise/:siren/lobbying` ($0.01): Lobbying and influence profile of a French company from the official HATVP register of interest representatives — a transparency, governance and ESG due diligence signal: registration status, category, lobbying-expense brackets per fiscal year, staff count, recent subjects with intervention domains and action types, clients (for consulting firms), affiliations, declaration defaults and deregistrations. Organisation-level only — no personal data. Not registered is a meaningful answer (still 200).
+- `GET /v1/entreprise/:siren/emploi` ($0.02): Hiring signals for a French company, derived on demand from France Travail data (snapshot under 24 h, nothing stored): actively-hiring yes/no/unprovable, active-postings count (SIREN-keyed employer page when available, else strict name matching over known locations), top ROME occupation families, contract-type mix, share of postings displaying a pay amount - plus the Egapro gender-equality index and the INSEE workforce bracket. Aggregated signals only, never posting texts or recruiter contacts.
+- `GET /v1/eu/agrements` ($0.01): EU financial authorisations in five official registers, by name or LEI: ESMA Registers (~14,000 MiFID entities, EU/EEA: status, authority, dates), the ECB list of supervised entities (banking union: significant banks under direct ECB supervision, less significant under national authorities, group, monthly changes), ESMA benchmark administrators and money market funds (fund, manager, status), EIOPA pension institutions (IORP). One integration for the single market; data free at the sources.
+- `GET /v1/surveillance/creer` ($0.05): Monitoring for France: a 30, 90 or 365-day watchlist (?duree=), recurring KYB & compliance alerts. Each target checked DAILY against official sources; Ed25519-signed webhook and/or e-mail digest, always pollable. Company targets (SIREN): BODACC, status, officers, sanctions/AMF blacklist, PSAN/SGP, Seveso, FR & EU procurement awards. Directors (dirigeant:Name): new/ended offices. Associations (RNA W…): JOAFE notices. Per target (1-100) x duration: $0.05 / $0.135 / $0.50. No account, no refund. A full-size request quotes up to $50.00, above the $1.00 single-payment cap that x402 clients apply BY DEFAULT since @x402/core 2.23 (spendControls): raise spendControls.maxAmountPerPayment, or set spendControls: false, before signing — otherwise your own client rejects the quote without ever calling us.
+- `GET /v1/surveillance/:jeton/renouveler` ($0.05): Watchlist renewal: extend an existing company monitoring watchlist by 30, 90 or 365 days (?duree=, default 30, any duration whatever the original) of daily surveillance against official sources — $0.05 / $0.135 / $0.50 per target. The cibles parameter must repeat the exact watched targets: it is what the quote is computed from. Possible until 7 days after expiry, then the watch is purged. No refund, no pro rata. A full-size request quotes up to $50.00, above the $1.00 single-payment cap that x402 clients apply BY DEFAULT since @x402/core 2.23 (spendControls): raise spendControls.maxAmountPerPayment, or set spendControls: false, before signing — otherwise your own client rejects the quote without ever calling us.
+- `GET /v1/dirigeant/recherche` ($0.02): Reverse search for company directors and officers in France: a people search by surname (?nom=) that lists the French companies where a person of that name holds or held an office, with each company SIREN, name and the person role — network mapping and due diligence on directors. Person data is limited to surname, first names, role and birth YEAR (French GDPR/INPI rules). Results are indicative: homonyms are not disambiguated and very common names are capped.
+- `GET /v1/prospection` ($0.02): French B2B prospecting and lead generation over the full official French company registry (29.8M companies): build targeted company lists with multi-criteria filters — NAF/APE activity code, departement or postal-code prefix, legal form, workforce bracket, company age, active RGE environmental certification, gender-equality index. Returns 100 active companies per page; each page is one payment. Combine filters to narrow a market segment into fresh, registry-grade company lists for France.
+- `GET /v1/intelligence/:siren` ($1.00): French company intelligence report for due diligence — ONE call, all blocks cross-referenced: identity, officers with OTHER public offices (network map), financials with multi-year trends, sector benchmarks, failure-risk score, BODACC, sanctions, FR/EU procurement, IP, Seveso/ICPE, AMF, lobbying, Egapro, establishments, INPI filings, live VIES. Closed-list risk signals, rule-based verdict, figures-first executive summary. Ed25519-signed report, provenance per block (official register + as-of).
+- `GET /v1/rapport/:siren` ($0.50): PDF report on a French company, on demand — the shareable due diligence dossier: the full KYB file (identity, officers, BODACC legal alerts, filed financials, sanctions screening, completeness score) laid out as an A4 document, including the AI health summary when one is cached. One paid call returns the finished company report as a PDF, ready to attach to a compliance or due diligence dossier. Response is application/pdf.
+- `GET /v1/eu/recherche` ($0.003): European company search across official registers: company lookup by name, returning European company data in one unified schema. Norway, Estonia, Latvia and Spain (BORME base, hoja key) are served from local copies; Czechia, Slovakia, Finland, Poland and Switzerland are queried live; Denmark and UK when enabled; plus worldwide GLEIF (LEI) coverage of financial entities and large groups. Top 10 matches with country, national ID, status and a score_confiance (0-1 match confidence).
+- `GET /v1/eu/entreprise/BE/:id` ($0.01): Official Belgian company registry lookup (KBO/BCE, Banque-Carrefour des Entreprises / Kruispuntbank van Ondernemingen). Query: /v1/eu/entreprise/BE/0403199702 (10-digit enterprise number, with or without dots). Returns legal name, legal form, normalized status, incorporation date, registered office, NACEBEL activities with French labels, the establishment-unit list, VAT number and LEI, plus a link to the official register entry — Belgian company data from KBO/BCE open data, refreshed daily.
+- `GET /v1/eu/entreprise/CH/:id/evenements` ($0.02): Swiss commercial-register publications from the Official Gazette of Commerce (SOGC/SHAB, SECO public API, live, since July 2018): every registration, change and deletion carrying the UID — date, number, canton, office, the company as published (name, UID, seat, legal form, purpose, capital, address without c/o) and closed-list change flags (name, seat, address, purpose, capital, form, bankruptcy, liquidation…); free text withheld (persons). Query: /v1/eu/entreprise/CH/CHE-102.732.681/evenements.
+- `GET /v1/eu/entreprise/CH/:id/insolvabilite` ($0.02): Swiss bankruptcy publications from the SOGC/SHAB (SECO public API, live, since 2021) whose debtor is the company (never a natural person): preliminary notice, bankruptcy publication and call to creditors, suspension, schedule of claims, distribution list, closing, revocation, foreign-bankruptcy recognition — decision date, deadlines, office, canton, official labels in four languages; aucune_procedure is bounded by the online archive. Query: /v1/eu/entreprise/CH/CHE-138.657.350/insolvabilite.
+- `GET /v1/eu/entreprise/CH/:id` ($0.01): Official Swiss company registry lookup (Zefix — Central Business Name Index / Registre central du commerce), covering companies registered in Switzerland. Query: /v1/eu/entreprise/CH/CHE-107.480.920 (CHE UID number, with or without dots). Returns legal name, legal form, normalized status, registered office and the cantonal register link — Swiss company data live from Zefix. Same unified JSON schema as every Sirenic European company profile.
+- `GET /v1/eu/entreprise/NO/:id` ($0.01): Official Norwegian company registry lookup (Brønnøysundregistrene / Enhetsregisteret — BRREG open data). Query: /v1/eu/entreprise/NO/923609016 (9-digit organisasjonsnummer). Returns legal name, legal form, normalized status, incorporation date, registered office, VAT/MVA and LEI — Norwegian company data from Norway's official register, the Enhetsregisteret (NLOD open data). Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/CZ/:id` ($0.01): Official Czech company registry lookup (ARES — register of economic subjects, Ministry of Finance of Czechia). Query: /v1/eu/entreprise/CZ/45274649 (8-digit IČO / ICO identifier). Returns legal name, legal form, normalized status, incorporation date, registered office and the DIČ (DIC) VAT number — Czech company data live from ARES, the official register of companies in Czechia. Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/SK/:id` ($0.01): Official Slovak company registry lookup (RPO — Register právnických osôb, the register of legal entities of Slovakia, Statistical Office SR, CC-BY). Query: /v1/eu/entreprise/SK/35763469 (8-digit IČO / ICO identifier). Returns legal name, legal form, normalized status, incorporation date and registered office — Slovak company data live from the official RPO register of Slovakia. Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/FI/:id/evenements` ($0.02): Finnish trade-register notices from the PRH open data (CC BY 4.0, live, 24 h cache): every notice since late 2014 — date, type (formation, change, annual accounts, rectification, merger) and its entry codes (board, representation, capital, shares, office, auditors, articles, bankruptcy, restructuring, liquidation, removal, merger…) with PRH labels in EN/FI/SV and a closed family; register memberships (trade, VAT, prepayment, employer). Query: /v1/eu/entreprise/FI/0112038-9/evenements.
+- `GET /v1/eu/entreprise/FI/:id` ($0.01): Official Finnish company registry lookup (PRH / YTJ — Finnish Patent and Registration Office Business Information System, CC-BY). Query: /v1/eu/entreprise/FI/0112038-9 (Business ID / Y-tunnus). Returns legal name, legal form, normalized status, registered office and the FI VAT number — Finnish company data live from the PRH open data API, covering companies registered in Finland. Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/PL/:id` ($0.01): Official Polish company registry lookup (KRS — Krajowy Rejestr Sądowy, the National Court Register of Poland, Ministry of Justice). Query: /v1/eu/entreprise/PL/0000006865 (10-digit KRS number). Returns legal name, legal form, normalized status, incorporation date and registered office — Polish company data live from KRS (officers anonymized at the source). Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/EE/:id` ($0.01): Official Estonian company registry lookup (e-Business Register / Äriregister of Estonia). Query: /v1/eu/entreprise/EE/12417834 (8-digit registrikood). Returns legal name, legal form, normalized status, incorporation date and registered office — Estonian company data from Estonia's official e-Business Register. Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/LV/:id` ($0.01): Official Latvian company registry lookup (Uzņēmumu reģistrs / Uznemumu registrs — the Register of Enterprises of Latvia). Query: /v1/eu/entreprise/LV/40003245752 (11-digit registration number). Returns legal name, legal form, normalized status, incorporation date and registered office — Latvian company data from Latvia's official register. Unified JSON schema shared by all Sirenic European company profiles.
+- `GET /v1/eu/entreprise/HR/:oib` ($0.01): Official Croatian company registry lookup (Sudski registar — the court register of companies, daily snapshot of the open API). Query: /v1/eu/entreprise/HR/92803032010 (11-digit OIB; an 8- or 9-digit MBS is accepted). Returns identity (name, short name, legal form, seat, VAT id HR+OIB, founding date), status with the running procedure (bankruptcy, liquidation, pre-bankruptcy, estates), court, capital, main activity (NKD), published e-mails, plus the LEI group and EU funding blocks.
+- `GET /v1/eu/entreprise/HR/:oib/insolvabilite` ($0.02): Croatian company insolvency status from the Sudski registar (daily snapshot): running procedure (bankruptcy / stečaj, liquidation, pre-bankruptcy stages, bankruptcy or liquidation estate) and the published court decisions with their extracted facts — court, case reference, date — never the decision text. aucune_procedure is a measured fact on the complete snapshot. Attribution to the Ministry of Justice required.
+- `GET /v1/eu/entreprise/HR/:oib/evenements` ($0.02): Croatian company court-register entries (Sudski registar, daily snapshot): every typed statutory entry (108 types: founding act, statute, legal form, capital changes, mergers and divisions, enterprise contracts, dissolution grounds, court decisions), in register order. Published text served only for a closed list of entry types without natural persons (texte_retenu otherwise); court decisions served by court, reference and date.
+- `GET /v1/eu/entreprise/HR/:oib/comptes` ($0.01): Croatian company annual-accounts filings from the Sudski registar (daily snapshot): every filing recorded per financial year — filing type (GFI-POD report, statement of inactivity, statement of correction), consolidated or not, period covered, filing date — newest first. Metadata only, never the document; aucun_depot is a measured fact. Attribution to the Ministry of Justice required.
+- `GET /v1/eu/entreprise/LT/:kodas` ($0.01): Official Lithuanian company registry lookup (Juridinių asmenų registras, daily snapshot of data.gov.lt, CC BY 4.0). Query: /v1/eu/entreprise/LT/304500803 (9-digit JAR code). Identity as published (sole proprietorships anonymised by the register, flagged), legal form, one of 31 register statuses with date, registration and removal dates, VAT, municipality, plus registre_lt (capital, taxpayer type, VAT dates, filing compliance, shareholder headcounts) and fiscalite_lt (tax arrears, taxes paid).
+- `GET /v1/eu/entreprise/LT/:kodas/comptes` ($0.02): Lithuanian company annual accounts — balance sheets and P&L filed at the Juridinių asmenų registras (open data, CC BY 4.0, 2015+). Query: /v1/eu/entreprise/LT/304500803/comptes (9-digit JAR code). EVERY filed year in one call: non-current and current assets, total assets, equity, liabilities, tangible fixed assets, revenue, income, profit before tax, net profit, in EUR as published; filing template, standard and date. Structured filings only (stated). Null = not published, never zero.
+- `GET /v1/eu/entreprise/LT/:kodas/insolvabilite` ($0.02): Lithuanian company insolvency from two official sources (data.gov.lt, CC BY 4.0, daily snapshot): the legal status at the Juridinių asmenų registras (31 closed-list codes: bankruptcy, liquidation, restructuring, removed…) and the AVNT case files since 2020 — bankruptcies (court, initiator, opening, liquidation, termination, closing and removal dates, simplified procedure, intentional-bankruptcy ruling), restructurings (plan, end), intentional bankruptcies. aucune_procedure is measured on both.
+- `GET /v1/eu/entreprise/IE/:numero` ($0.01): Official Irish company registry lookup (Companies Registration Office — CRO Open Data, complete daily snapshot, CC BY 4.0). CRO number, 1-7 digits, e.g. 600161. Common identity (name, type, status, incorporation, registered office with Eircode) plus the CRO block: 33 status codes in closed families (normal, dissolved, liquidation, strike-off, examinership…), 45 type codes, annual-return dates, last accounts, NACE, 2022-2024 filings index (dates). 404 without charge if absent.
+- `GET /v1/eu/entreprise/IE/:numero/insolvabilite` ($0.01): Irish company insolvency status from the CRO register (open data, CC BY 4.0, complete daily snapshot): procedure derived from the published status — liquidation, liquidation stayed, examinership, administration — with its date; strike-off and dissolution reported separately. `aucune_procedure` is a measured fact on the complete snapshot; the CRO publishes neither liquidator nor court orders. 404 without charge when unknown.
+- `GET /v1/eu/entreprise/CY/:id` ($0.01): Official Cypriot company registry lookup (Registrar of Companies, DRCOR — monthly open-data snapshot on data.gov.cy, CC BY 4.0). Query: /v1/eu/entreprise/CY/HE165 (number with its HE or AE prefix; business names, partnerships and BN are not legal persons and are not served). Current name, type and sub-type, one of 12 dated register statuses (registered, struck off, liquidation, receivership…), registration date, registered office, plus registre_cy (status family, mandates count).
+- `GET /v1/eu/entreprise/CY/:id/dirigeants` ($0.01): Cypriot company officers from the DRCOR open data (data.gov.cy, CC BY 4.0, monthly national snapshot): every mandate published for the company — directors, alternate directors, company secretaries, assistant and deputy secretaries, authorised persons of overseas companies — with the register's Greek role label and a closed-list family. Name and role only: the source publishes no birth date, address, nationality or appointment date. Legal persons only (HE, AE).
+- `GET /v1/eu/entreprise/RO/:cui` ($0.01): Official Romanian company registry lookup (ONRC, Registrul Comerțului — monthly open-data snapshot on data.gov.ro, CC BY 4.0). Query: /v1/eu/entreprise/RO/412052 (CUI / fiscal code, RO prefix accepted). Current name, legal form, every registration code of the company (re-registrations kept), the register's status codes in closed families (in operation, struck off, insolvency, bankruptcy, liquidation, dissolution, suspension, alerts), registered office, plus registre_ro. Legal persons only.
+- `GET /v1/eu/entreprise/RO/:cui/dirigeants` ($0.01): Romanian company legal representatives from the ONRC open data (data.gov.ro, CC BY 4.0, monthly snapshot): every mandate published — administrators, permanent representatives of corporate administrators, general director, supervisory board, directorate, liquidators, judicial administrators — with the register's Romanian label, a closed-list family and the nature (person or entity). Name and role only: birth date and domicile published by the source are never stored. Legal persons only (CUI).
+- `GET /v1/eu/entreprise/RO/:cui/insolvabilite` ($0.02): Romanian company insolvency from the ONRC register (data.gov.ro, CC BY 4.0, monthly snapshot): the status codes of the bankruptcy, insolvency (Laws 85/2014 and 85/2006, judicial reorganisation, recovery), liquidation and dissolution families with their Romanian labels, plus the practitioners published for the company (judicial liquidator or administrator, special administrator, liquidator). aucune_procedure measured on the complete snapshot. Query: /v1/eu/entreprise/RO/29023037/insolvabilite.
+- `GET /v1/eu/entreprise/RO/:cui/comptes` ($0.02): Romanian company annual accounts from the Ministry of Finance open data (data.gov.ro, CC BY 4.0, financial years 2019-2024), every published year in one call: balance sheet (fixed and current assets, inventories, receivables, cash, liabilities, provisions, equity, paid-up capital), income statement (net turnover, total income and expenses, gross and net result), average headcount, CAEN Rev. 2 class, filing format (abridged or full). RON as published; null = not published. Legal persons only.
+- `GET /v1/eu/entreprise/PT/:nipc/marches-publics` ($0.02): Public-procurement record of a Portuguese company from IMPIC's Portal BASE (weekly open-data files on dados.gov.pt, public domain; every public contract since 2012): contracts WON by NIPC — buyer, subject, procedure, CPV, lots, contract, base and final prices in EUR, dates, duration, framework agreement, closure, bidder count, contract modifications — contracts ISSUED as a buyer and notices in the Diário da República; newest first, capped at 100. Winners without a published NIF are never named.
+- `GET /v1/eu/entreprise/PL/:nip/marches-publics` ($0.02): Public-procurement record of a Polish company from the Biuletyn Zamówień Publicznych (e-Zamówienia public API, UZP, CC0; national below-EU-threshold notices since 2021): contracts WON matched by legal-person NIP — buyer (name, NIP), subject, CPV, part, outcome, tenders received, awarded price and contract value in PLN, contract date, enterprise size — and notices ISSUED as a buyer; newest first, capped at 100. Winners served only when proven legal persons (legal form or KRS); sole traders never.
+- `GET /v1/eu/entreprise/ES/:nif/marches-publics` ($0.02): Public-procurement record of a Spanish company from the Plataforma de Contratación del Sector Público (Ministry of Finance CODICE feeds, hosted profiles and aggregated regional platforms, since 2012): contracts WON matched by legal-person NIF — buyer (name, DIR3), subject, CPV, lot, result, award date, amounts in EUR, tenders received, SME flag — and notices ISSUED as a buyer; newest first, capped at 100. Never a natural-person winner. Reuse under the ministry's conditions.
+- `GET /v1/eu/entreprise/ES/:hoja/actes` ($0.02): Spanish company acts from the official BORME gazette (Registro Mercantil, section A) by hoja registral — the register key, e.g. VI-23141: incorporations, officer appointments and dismissals (role + name), capital changes, mergers, dissolutions, insolvency. Daily filings flow since 2009, newest first (100 max + total count). Spanish personal IDs (DNI/NIE) and natural-person sole-shareholder names are redacted at ingestion. Basado en datos de la Agencia Estatal Boletin Oficial del Estado (boe.es).
+- `GET /v1/eu/entreprise/GB/:company_number/dirigeants` ($0.01): UK company officers live from Companies House, the official UK company registry, by company number (e.g. GB/00102498): active directors and secretaries with role, appointment date, nationality, occupation, country of residence and month+year of birth only — never a correspondence address (GDPR minimisation). Resigned-officer count included. Built for KYB and due diligence on director appointments and governance. Contains public sector information licensed under the Open Government Licence v3.0.
+- `GET /v1/eu/entreprise/GB/:company_number/beneficiaires-effectifs` ($0.02): UK persons with significant control (PSC register) live from Companies House, for KYB and group-structure checks: LEGAL-ENTITY controllers only (corporate entities, legal persons) with natures of control (ownership/voting bands), notification dates and register identification, plus official PSC statements. Natural-person controllers are COUNTED, never named (GDPR, CJEU C-798/24, since 2026-09-19). Ceased PSCs excluded by default (inclure_cesses=true adds them).
+- `GET /v1/eu/entreprise/GB/:company_number/insolvabilite` ($0.02): UK company insolvency record for credit risk and compliance screening, live from Companies House by company number: liquidation (compulsory or voluntary), administration, receivership and other cases with their dates and insolvency practitioners (name and role only, no addresses). A company with NO recorded case returns an explicit positive answer (200, aucune_procedure) — the register is authoritative, an empty record is a fact. Open Government Licence v3.0 (Companies House).
+- `GET /v1/eu/entreprise/GB/:company_number/marches-publics` ($0.02): Public-procurement record of a UK company from Find a Tender (above-threshold notices since 2021) and Contracts Finder (below-threshold since 2023), Cabinet Office OCDS feeds under OGL v3: contracts WON matched by company number — buyer, subject, contract value in GBP, award and signature dates, period, status, official notice link — and notices ISSUED as a buyer, newest first, with totals. Only half of suppliers carry a company number: zero is a non-conclusive absence. Facts, never a score.
+- `GET /v1/eu/entreprise/GB/:company_number/annonces` ($0.02): UK company insolvency notices from The Gazette, the official journal (London, Edinburgh, Belfast; OGL v3.0), collected daily from the corporate insolvency feed (category 24): winding-up resolutions and petitions, appointment of liquidators and administrators, winding-up orders, creditors' notices, dividends — official notice code, closed-list type, date and link. What Companies House does not give. A known company with no notice gets an explicit bounded answer. No personal data.
+- `GET /v1/eu/entreprise/LV/:regnr/comptes` ($0.03): Latvian company annual accounts — official financial statements from VID filings via the Uzņēmumu reģistrs open data of Latvia (CC0, daily). Query: /v1/eu/entreprise/LV/40003032065/comptes (11-digit registration number). EVERY filed fiscal year in one call: balance sheet, profit and loss (revenue, net income), cash flow when filed, employees, as published (EUR, LVL before 2014; statutory and consolidated filings kept apart). Null = not published, never zero.
+- `GET /v1/eu/entreprise/LV/:regnr/insolvabilite` ($0.02): Latvian company insolvency record from the official Uzņēmumu reģistrs open data (CC0, daily photo since 2008), built for credit risk and compliance screening: insolvency and legal protection proceedings in Latvia with start/end dates, resolution, court and case number. A registered company with NO proceeding returns an explicit positive answer (200, aucune_procedure: true) — the register is authoritative. 11-digit registration number.
+- `GET /v1/eu/entreprise/LV/:regnr/dirigeants` ($0.01): Latvian company officers and directors from the official Uzņēmumu reģistrs (Latvia's company registry) open data (CC0, daily): board members, chairs, liquidators and other representatives with name, role, governing body, representation rights (individually/jointly) and registration date; corporate officers carry their own registration number. For KYB and governance. GDPR minimisation: never the Latvian personal identity number, birth month+year only when published. 11-digit registration number.
+- `GET /v1/eu/entreprise/LV/:regnr/evenements` ($0.02): Latvian company legal events from the official Uzņēmumu reģistrs open data (CC0, daily photo): liquidations and activity terminations (incl. by court or tax authority), mergers, acquisitions, divisions and transformations with the other company's number, VID activity suspensions, securing measures (prohibitions, liens, attachments) with the registering institution. Closed-list types plus source code and wording. A registered company with no event gets aucun_evenement: true. 11-digit number.
+- `GET /v1/eu/entreprise/LV/:regnr/marches-publics` ($0.02): Public-procurement record of a Latvian company from the IUB (Iepirkumu uzraudzības birojs) daily open-data notices (CC0, e-forms since 2023-10-25): contracts WON — buyer, subject, CPV, contract reference, value in EUR, conclusion and decision dates, contract status — and notices ISSUED as a buyer, newest first, with totals. Natural-person winners are never served. About 3% of Latvian winners are published without an identifier: zero is a non-conclusive absence. Facts, never a score.
+- `GET /v1/eu/entreprise/LV/:regnr/associes` ($0.02): Latvian company members and shareholders from the official Uzņēmumu reģistrs open data (CC0, daily): SIA members (parts) and AS registered shareholders with number of shares, nominal value and currency as published (LVL before 2014), votes, share of nominal capital and holding start date. Corporate holders are named with their registration number; natural persons are COUNTED, never named (GDPR); dematerialised shares show the depository only. Group links for KYB. 11-digit number.
+- `GET /v1/eu/entreprise/EE/:registrikood/comptes` ($0.02): Estonian company annual accounts — key figures from the official e-Business Register open data (RIK, CC BY 4.0, refreshed monthly). Query: /v1/eu/entreprise/EE/10003666/comptes (8-digit registrikood). EVERY published financial year since 2019 in one call: balance sheet (assets, equity, liabilities), revenue, employee expense, depreciation, operating and net profit, average FTE headcount — in EUR as published. Statutory and consolidated figures kept apart. Null = not published, never zero.
+- `GET /v1/eu/entreprise/EE/:registrikood/evenements` ($0.02): Estonian registry rulings (määrused) — early-warning credit-risk signal from the e-Business Register open data (RIK, CC BY 4.0, daily national photo): entries, remedy orders, striking-off/dissolution WARNINGS, annual-report fines, dated. alerte flags a CLOSED type list (rest in types_non_qualifies); nombre_alertes excludes only rulings explicitly resolved (etat_code=L) — every other state (J, K, unseen codes) still counts. A still-registered entity with no ruling gets a dated positive answer.
+- `GET /v1/eu/entreprise/EE/:registrikood/dirigeants` ($0.01): Estonian company officers from the official e-Business Register open data (RIK, CC BY 4.0, daily national photo): management board, procurators, liquidators, bankruptcy trustees, partners, contact persons, plus off-card supervisory board, auditors and audit firms — closed-list organe/role with the register's codes, registration date, representation rules. GDPR: first name, last name and role only, never the published identifier hash or birth date. Legal persons only. 8-digit registrikood.
+- `GET /v1/eu/entreprise/EE/:registrikood/associes` ($0.02): Estonian company members and shareholders from the official e-Business Register share register (RIK, CC BY 4.0, daily photo): holding percentage, nominal value and currency as published, ownership type, registration date; AS shareholders and founders recorded off-card; share pledges; capital. Corporate holders are named with their registrikood or foreign code and country; natural persons are COUNTED, never named (GDPR). Group links for KYB. Legal persons only. 8-digit registrikood.
+- `GET /v1/eu/entreprise/SE/:orgnr/comptes` ($0.03): Swedish company annual accounts and financial statements decoded from the iXBRL filings Bolagsverket publishes for free (EU high-value datasets since 3 Feb 2025). Query: /v1/eu/entreprise/SE/5560401977/comptes (10-digit organisationsnummer). EVERY digitally filed fiscal year: revenue, operating and net result, balance sheet (total assets, equity, debts), average employees and prior-year column as filed. Digital filing is optional in Sweden (~63% of reports): absence never means no accounts.
+- `GET /v1/eu/entreprise/SE/:orgnr/evenements` ($0.02): Swedish company registry events from Bolagsverket's official weekly national file (free EU high-value dataset) — credit risk signals: incorporation, ONGOING bankruptcy (konkurs), liquidation, company reconstruction, composition proceedings, merger or division, and deregistration with coded reason and date. Query: /v1/eu/entreprise/SE/5560012402/evenements (10-digit organisationsnummer). A registered company with no proceeding returns an explicit positive answer — the register is authoritative.
+- `GET /v1/eu/entreprise/SE/:id` ($0.01): Official Swedish company registry lookup (Bolagsverket — Swedish Companies Registration Office). Query: /v1/eu/entreprise/SE/5560012402 (10-digit organisationsnummer). Returns legal name, legal form, normalized status, registration date and registered office — Swedish company data for Sweden, from Bolagsverket's official weekly national file, free of charge under the EU high-value datasets regulation. Part of Sirenic's Nordics coverage, unified JSON schema.
+- `GET /v1/eu/entreprise/CZ/:ico/insolvabilite` ($0.02): Czech company insolvency from ISIR, the official insolvency register of Czechia, since 2008. Query: /v1/eu/entreprise/CZ/45274649/insolvabilite (8-digit IČO). Every proceeding — bankruptcy (konkurs), reorganisation (reorganizace): case number, court, status, dates, its 100 most recent events with document links. Publication is compulsory by law: no proceeding is an explicit positive answer. LEGAL PERSONS ONLY: a natural person's IČO (sole trader — most Czech IČOs) is refused, never cleared.
+- `GET /v1/eu/entreprise/PL/:krs/evenements` ($0.02): Polish company registry EVENTS from the official KRS daily bulletin (Ministry of Justice) — company monitoring for Poland. Query: /v1/eu/entreprise/PL/0000006865/evenements (KRS number). Liquidation, bankruptcy, restructuring, mergers, suspension/resumption, dissolution, tax arrears, enforcement, accounts filings, name/seat/capital changes, strike-off — each typed from a CLOSED list, dated, traced to its section, in a gap-free window. GDPR by design: no officer, no PESEL, no register free text.
+- `GET /v1/eu/entreprise/:pays/:id` ($0.01): European company profile by country code and national ID — official company registry data in one unified JSON schema: identity, legal form, status, head office, VAT, LEI, register link and, for LEI holders, the GLEIF level-2 group (groupe_lei: consolidating parents or reason for none). Live: Norway, Estonia, Latvia, Belgium (KBO, NACEBEL + establishments), Czechia (ARES), Slovakia (RPO), Finland (PRH), Poland (KRS), Switzerland (Zefix); Denmark and UK when enabled; elsewhere via GLEIF.
+- `GET /v1/eu/facturation/dossier` ($0.03): European invoice verification and supplier verification for e-invoicing compliance in Belgium (mandate live since 1 Jan 2026) and Poland (KSeF): official registry identity, VAT check against VIES, Peppol reachability (BE), IBAN form + key check, bank identified and, in Poland, the official White List: is the IBAN DECLARED by the taxpayer? Paying an undeclared account over 15,000 PLN costs the buyer the VAT deduction and joint liability. Deterministic pret_a_facturer verdict, closed-list reasons.
+- `GET /v1/eu/entreprise/:pays/:id/marches-publics-ue` ($0.02): European public procurement contract awards won by a company from Latvia, Norway, Belgium, Denmark, Finland, Sweden, Czechia, Slovakia or Estonia, from TED (Tenders Electronic Daily): notices matched by NATIONAL identifier in all its published forms — buyer, country, subject, notice-level amount, CPV codes, co-winners, official link. 40 to 86% of award notices carry a readable winner identifier depending on the country: zero is a non-conclusive absence. Live TED query, cached 24 h.
+- `GET /v1/eu/entreprise/:pays/:id/transactions-dirigeants` ($0.02): Director transactions and insider transactions at Belgian and German listed companies — managers transactions (directors' dealings) under MAR Article 19, as notified to the FSMA and BaFin: are the company's managers buying or selling? Issuer-level aggregate over a rolling 12 months — counts, gross buy and sell amounts, net flow, breakdown by declarer category, and the underlying notifications. BE: 10-digit enterprise number. DE: LEI or ISIN. No individual is ever named.
+- `GET /v1/eu/entreprise/NO/:id/comptes` ($0.02): Norwegian company annual accounts and financial statements from Norway's official Regnskapsregisteret (Brønnøysundregistrene, Brreg, NLOD 2.0). Query: /v1/eu/entreprise/NO/923609016/comptes (9-digit organisasjonsnummer). Latest filed fiscal year live from the register plus earlier years collected since 2026-07 — financials: balance sheet (assets, equity, debts), P&L (operating income and result, net result) in the filing currency (can be USD). Banks and insurers are not served by the source.
+- `GET /v1/eu/entreprise/NO/:id/evenements` ($0.02): Norwegian company legal events from the official Enhetsregisteret (Brreg, NLOD 2.0) for insolvency and credit risk monitoring: bankruptcy (konkurs, with the registered date), voluntary or compulsory liquidation, and strike-off, plus current flags checked live. 9-digit organisasjonsnummer. A live-verified company with no flag gets an explicit positive answer. Coarser than France's BODACC: no ruling text, no court; undated events carry an upper-bound date. Legal persons only, never individuals.
+- `GET /v1/eu/entreprise/NO/:id/dirigeants` ($0.01): Norwegian company officers and board from the official Enhetsregisteret (Brønnøysundregistrene, NLOD 2.0), refreshed daily from the national roles bulk: general manager, board chair, members and deputies, auditor and accountant with their own orgnr, fully liable partners, Norwegian representative; current mandates by default, past ones on request. Closed-list roles with the register's code and wording. GDPR: name and role only, never the published birth date. Legal persons only. 9-digit orgnr.
+- `GET /v1/eu/entreprise/NO/:id/etablissements` ($0.01): Norwegian company local units (underenheter, the equivalent of SIRET establishments) from the official Enhetsregisteret (Brønnøysundregistrene, NLOD 2.0), refreshed daily from the national bulk: each unit's own 9-digit orgnr, name, industry code (NACE-NO) and auxiliary activity, published headcount, location and postal addresses, registration and ownership-change dates, VAT status, plus unit count and cumulative headcount. A known legal person with no unit gets an explicit positive answer.
+- `GET /v1/eu/entreprise/DK/:id/comptes` ($0.01): Danish company registry filings from the official virk.dk publication index (Erhvervsstyrelsen), Denmark: the fiscal years whose XBRL annual report has been decoded — the entry point to Danish annual accounts and financial statements — with closing dates, period, entity name and currency. 8-digit CVR number. Danish-taxonomy (fsa) filings only: IFRS/ESEF-only groups are not decoded, absence does not mean no accounts exist. Unique on x402: no other service exposes decoded Danish filed accounts.
+- `GET /v1/eu/entreprise/DK/:id/comptes/:date_cloture` ($0.05): A Danish fiscal year of annual accounts decoded from the XBRL annual report filed with Erhvervsstyrelsen (Denmark) — financial statements: revenue (null = not published, never zero), gross result, operating result, pre-tax and net result, balance sheet (equity, total assets, debts), average employees, plus prior-year comparatives from the same filing. Amounts in the filing currency (mostly DKK). Closing date (YYYY-MM-DD) comes from the filings-list endpoint; official XBRL document URL included.
+- `GET /v1/eu/entreprise/DK/:cvr/dirigeants` ($0.01): Danish company officers and directors (deltagere) live from the official CVR register (Erhvervsstyrelsen system-to-system) by CVR number — governance and KYB: executive board (Direktion), board members (Bestyrelse) incl. deputies, election method, fully liable I/S or K/S partners and auditors — name, body, role, mandate dates. Active mandates by default; inclure_anciens=true adds ended ones where founders (stiftere) normally are. GDPR minimisation: never an address, never a personal identifier.
+- `GET /v1/eu/entreprise/SK/:ico/comptes` ($0.01): Slovak company annual accounts — filings list from the official Register účtovných závierok (RÚZ, registeruz.sk, Ministry of Finance, CC0). Query: /v1/eu/entreprise/SK/36417475/comptes (8-digit IČO). The fiscal years whose STRUCTURED financial statements have been decoded: closing date, period, filing type, form model, statutory vs consolidated scope, official document link. PDF-only filings (all IFRS groups) are not decoded — absence does not mean no accounts exist.
+- `GET /v1/eu/entreprise/SK/:ico/comptes/:date_cloture` ($0.03): One Slovak fiscal year decoded from the structured statements filed with the RÚZ (CC0) — balance sheet and profit and loss: net turnover, operating income and costs, value added, staff costs, operating, financial, pre-tax and net result, income tax, total assets, non-current and current assets, equity, share capital, liabilities — plus prior-year comparatives (EUR, never converted). Null = not published, never zero. Closing date comes from the filings list; ?perimetre=consolide for consolidated.
+- `GET /v1/eu/entreprise/GB/:company_number/comptes` ($0.01): UK annual accounts filings list — financial statements from iXBRL in the official Companies House Accounts Data Product (Open Government Licence v3.0). Query: /v1/eu/entreprise/GB/00095407/comptes (8-character company number, leading zeros included, SC/NI/OC prefixes supported). Every decoded balance sheet date with period, entity name, currency, accounting framework (micro-entity, FRS 102...) and accounts type. Electronically filed accounts only — absence does not mean no accounts exist.
+- `GET /v1/eu/entreprise/GB/:company_number/comptes/:date_cloture` ($0.05): One United Kingdom financial year from the iXBRL financial statements filed at Companies House: balance sheet (fixed and current assets, stocks, debtors, cash, creditors split by maturity, provisions, net assets, equity), average employees, the profit and loss when filed (turnover, operating, pre-tax and net result — most small companies file a balance sheet only), plus prior-year comparatives as published. Filing currency, null = not published, never zero. Open Government Licence v3.0.
+- `GET /v1/eu/entreprise/:pays/:id/comptes` ($0.01): European company financials — Belgian and Finnish company annual accounts, filings list. BE: every published deposit reference at the NBB CBSO (Central Balance Sheet Office, Authentic Data, since 1978), 10-digit enterprise number. FI: fiscal years available as PRH XBRL filings (~5% of Finnish limited companies file digitally; empty filings are filtered out, every listed year carries figures), Business ID NNNNNNN-N. Unique on x402: no other service exposes Belgian or Finnish filed accounts.
+- `GET /v1/eu/entreprise/:pays/:id/comptes/:reference` ($0.15): One annual-account filing — Belgian or Finnish company financial statements. BE: the deposit as filed at the NBB CBSO — structured JSON when the NBB publishes one, official PDF otherwise (?format=pdf forces the PDF; ?format=json refuses the fallback and answers 406, not charged). FI: one fiscal year decoded from the PRH XBRL filing — revenue, results, equity, assets, debts, prior-year figures (EUR, CC BY 4.0). Reference: BE deposit ref or FI closing date, from the filings list.
+- `GET /v1/entreprise/:siren/documents` ($0.02): Official filings of a French company at the INPI RNE registry: lists the legal deeds (statutes, general-meeting minutes, mergers...) and filed annual accounts, with filing dates and the document IDs needed to download each PDF from the document endpoint. Only documents the registry publishes are listed. The starting point for document due diligence in France: see which official documents, deeds and annual-account filings exist before paying to download one. Cached 24h.
+- `GET /v1/documents/:type/:id` ($0.10): PDF download of official documents from the French INPI RNE registry, by type (actes | bilans) and document ID from the document list endpoint. Filed annual accounts (bilans): any payer. Legal deeds (actes: statutes, general-meeting minutes) are RESERVED to identified Sirenic accounts (API key) since 2026-09-19 because they carry personal data — 401 otherwise, nothing charged. 1-10 MB, streamed as-is at request time (application/pdf), never stored: the primary-source evidence, not a summary.
+- `GET /v1/facture/verifier` ($0.02): Invoice verification for France — cross-check the identifiers PRINTED ON an invoice in one call: SIREN against the official registry (existence, active status, live), the VAT number on the invoice against the one computed from the SIREN AND live against VIES, the IBAN (ISO form, key digits, bank identified). Deterministic verdict coherent/incoherent/inverifiable, closed-list reasons. Flags a VAT that belongs to another company or a ceased supplier. Not a payee verification.
+- `GET /v1/facturation/dossier` ($0.03): Invoice verification and supplier verification — verify supplier before payment in France, the invoicing pack of the e-invoicing mandate France September 2026 (all VAT-liable companies must receive): legal identity, obligation dates, intra-EU VAT number checked LIVE against VIES, IBAN form + key check, bank identified, deterministic pret_a_facturer verdict, closed-list reasons. Not a payee verification: no holder name, no account existence check. A VIES outage never yields a false invalid.
+- `GET /v1/entreprise/:siren/facturation-prep` ($0.02): Supplier onboarding: PREPARE a compliant French e-invoice under the e-invoicing mandate France September 2026 (reception obligatory for every VAT-liable company; issuance phased GE/ETI 2026, SME 2027): legal name & form, status, computed intra-EU VAT number (with VIES pointer), establishments (SIRET) with addresses, NAF code, indicative obligation dates. Preparation only - Sirenic is not an accredited platform (PDP), never accesses the central directory and never issues or routes invoices.
+- `GET /v1/bodacc/recherche` ($0.03): Search French BODACC legal announcements by CRITERIA, not by company: pick a family (insolvency proceedings, deregistrations, sales, incorporations, accounts filings, conciliation...), a date window and optionally a department. Answers questions like: which companies entered insolvency proceedings in department 59 this week? Up to 100 announcements, newest first, each with its SIREN, court, town and structured judgment. Sole traders are excluded (their name is personal data) and counted.
+- `GET /v1/entreprise/:siren/dossier` ($0.005): Full French company file in ONE call: identity is the base, then add the blocks you want and pay only for those — etablissements, alertes_bodacc, contentieux, finances, marches_publics, marches_publics_ue, lobbying, risques_industriels, agrements, pi, documents, facturation_prep, score. Example: blocs=finances,pi,score. Each block costs what its own endpoint costs, total capped at $0.35. A block that cannot be served is NAMED with its reason: no data, not disclosable, or upstream outage.
+- `GET /v1/score/defaillance/:siren` ($0.10): Credit risk scoring for a French company: a default-risk score (0-100) at ~12 months from a transparent scorecard — filed financial ratios (structure, profitability, liquidity, net cash, debt service, trend), company age, and a hard BODACC override (open insolvency/liquidation, or closure for insufficiency of assets). Returns the score, a qualitative band, every component with its threshold, and a confidence level. Decision-support indicator — NOT a solvency opinion or credit rating.
+- `GET /v1/secteur/:code_naf/benchmarks` ($0.05): Sector benchmarks and sector statistics for a French NAF activity code (any level: division, groupe, classe, sous-classe): number of active companies, median company age (with quartiles), workforce-bracket distribution, and — when at least 5 companies file public accounts — median revenue, EBITDA margin, pre-tax result and debt ratio. Peer comparison in one call: place a company against its peers. Aggregates only, no personal data; sectors with fewer than 5 companies are excluded.
+- `GET /v1/iban/verifier/:iban` ($0.005): IBAN verification and bank validation for SEPA payments: a FORM check to verify a supplier before payment — ISO 13616 structure + mod-97 key, plus bank identification from FREE official sources (FR via ACPR/REGAFI incl. LEI and SIREN; BE NBB; AT OeNB incl. LEI; NL BIC list; DE Bundesbank file). French BICs via GLEIF/SWIFT BIC-to-LEI. NOT a payee verification for instant payments: neither the holder name nor the account's existence is checked (verification_titulaire: non_disponible).
+- `GET /v1/tva/verifier/:numero` ($0.003): EU VAT validation against the official VIES service: validate any intra-community VAT number (all member states) for compliance and due diligence. This tax id check is the tax half of verify supplier before payment, and a required check under the e-invoicing mandate France September 2026. Returns valid/invalid/unavailable status with the VIES consultation identifier as proof — VAT number validation usable across Europe for KYB and supplier onboarding.
+
+Option geo=true on company profile and establishments adds GPS coordinates.
+Company profiles also include index_egapro (gender-equality index) and
+certifications_rge (active RGE environmental certifications) when available.
+conventions_collectives_notes reads out, in plain language, the technical IDCC
+codes present in conventions_collectives (e.g. 9999 = no collective agreement
+assigned, not an agreement number to look up); an empty array means no technical
+code was recognised in the list — it is not a guarantee that every code is a
+real agreement.
+On /v1/entreprise/{siren}/pi, designs are grouped by FILING (one line per
+filing, not per drawing) and every block states its unit in nombre_unite.
+We request a single 100-document page of designs per call: past that,
+nombre_majorant is true and nombre counts DESIGNS — an upper bound on the
+number of filings, never a filing count. Dates are ISO and every one of them
+carries date_nature, because the date field is a FILING date for a trademark
+or a design and a PUBLICATION date for a patent. Each block also states
+liste_ordre: trademarks and designs come date-descending, patents come
+"amont_non_trie" — INPI neither sorts patents nor accepts a sort order, so a
+truncated patent list is a sample of the portfolio, not its latest filings.
+
+Each live country also has its own dedicated path, priced identically to the
+generic one: /v1/eu/entreprise/BE|CH|NO|CZ|SK|FI|PL|EE|LV|SE/{id}. They are not
+listed separately in the OpenAPI spec — same handler, same response shape.
+
+## What you get back
+
+GET /v1/kyb/552032534
+  -> 200 (sample of 2026-07-29, arrays truncated to 1 item):
+    {
+      "siren": "552032534",
+      "identite": {
+        "denomination": "DANONE",
+        "nature_juridique": "5599",
+        "activite_principale": "70.10Z",
+        "etat_administratif": "actif",
+        "date_creation": "1955-01-01",
+        "siege": {
+          "siret": "55203253400703",
+          "code_postal": "75009",
+          "commune": "PARIS"
+        },
+        "nombre_etablissements": 19
+      },
+      "tva_intracommunautaire": "FR27552032534",
+      "alertes_bodacc": {
+        "procedures_collectives": [],
+        "radiations": [],
+        "total_annonces": 106
+      },
+      "finances": {
+        "nombre_exercices": 8,
+        "exercices": [
+          {
+            "date_cloture": "2024-12-31",
+            "chiffre_affaires": 1030000000,
+            "resultat_net": 592000000
+          }
+        ]
+      },
+      "criblage_sanctions": {
+        "statut": "correspondances_a_verifier",
+        "cibles": [
+          {
+            "cible": "DANONE",
+            "role": "entreprise",
+            "nombre_correspondances": 0,
+            "correspondances": [],
+            "troncature": {
+              "tronquee": false,
+              "correspondances_servies": 0,
+              "non_servies": 0,
+              "niveau_non_servi": null,
+              "prefiltre_sature": false,
+              "note": null
+            }
+          }
+        ],
+        "cibles_non_criblees": []
+      },
+      "score_completude": 100,
+      "blocs_manquants": [],
+      "data_freshness": "identité : stock Sirene mensuel (2026-07-01)"
+    }
+
+GET /v1/intelligence/552032534
+  -> 200 (sample of 2026-07-29, arrays truncated to 1 item):
+    {
+      "siren": "552032534",
+      "type_rapport": "intelligence",
+      "version_rapport": "1.4",
+      "identite": {
+        "denomination": "DANONE",
+        "categorie_entreprise": "GE",
+        "activite_principale": "70.10Z",
+        "etat_administratif": "actif"
+      },
+      "tva_vies": {
+        "statut": "valide"
+      },
+      "risques": {
+        "score_defaillance": {
+          "score_risque": 22,
+          "classe": "sain",
+          "risque_12m": "faible"
+        }
+      },
+      "signaux": [
+        {
+          "signal": "propriete_industrielle_presente",
+          "source": "bases PI INPI",
+          "detail": "112 titre(s)"
+        }
+      ],
+      "synthese": {
+        "verdict_global": "solide",
+        "points_forts": [
+          "anciennete_etablie"
+        ],
+        "points_vigilance": []
+      },
+      "score_completude": 100,
+      "blocs_manquants": []
+    }
+
+GET /v1/facturation/dossier?siren=552032534&iban=FR1420041010050500013M02606
+  -> 200 (sample of 2026-08-07, arrays truncated to 1 item):
+    {
+      "siren": "552032534",
+      "destinataire": {
+        "destinataire": {
+          "denomination": "DANONE",
+          "etat_administratif": "actif"
+        }
+      },
+      "tva_vies": {
+        "numero": "FR27552032534",
+        "statut": "valide"
+      },
+      "banque": {
+        "iban_normalise": "FR1420041010050500013M02606",
+        "valide": true,
+        "exemple_de_documentation": true,
+        "banque": {
+          "nom": "La Banque Postale",
+          "bic": "PSSTFRPPXXX"
+        },
+        "verification_titulaire": "non_disponible"
+      },
+      "verdict": {
+        "pret_a_facturer": true,
+        "non_verifie": [
+          "existence_du_compte",
+          "nom_du_titulaire"
+        ],
+        "raisons": [
+          {
+            "code": "iban_exemple_documentation",
+            "niveau": "information",
+            "source": "IBAN publié comme EXEMPLE de documentation — bien formé ; existence du compte non contrôlée."
+          }
+        ]
+      },
+      "source": "Composition Sirenic : préparation e-facturation (INSEE Sirene), VIES (Commission européenne, live), contrôle de forme IBAN + registres bancaires officiels",
+      "disclaimer": "Aide à la décision déterministe (raisons en liste fermée, tracées à leur source) — ni un avis de conformité fiscale, ni une Verification of Payee : le volet bancaire contrôle la FORME et identifie la banque, sans vérifier l'existence du compte ni le nom du titulaire ; la TVA (VIES) et l'état Sirene, eux, sont vérifiés en direct. / Deterministic decision support — neither tax-compliance advice nor a Verification of Payee: the bank leg checks FORM (structure + key digits) and identifies the bank, without checking the account's existence or the holder's name; the VAT (VIES) and the Sirene registry status are checked live."
+    }
+
+GET /v1/eu/entreprise/GB/00000006
+  -> 200 (sample of 2026-09-04, arrays truncated to 1 item):
+    {
+      "pays": "GB",
+      "registre": "Companies House",
+      "id_national": "00000006",
+      "lei": null,
+      "denomination": "MARINE AND GENERAL MUTUAL LIFE ASSURANCE SOCIETY",
+      "forme_juridique": {
+        "code": "private-unlimited-nsc",
+        "libelle": null
+      },
+      "statut": "cesse",
+      "statut_detail": "dissolved",
+      "date_creation": "1862-10-25",
+      "adresse_siege": {
+        "adresse": "Cms Cameron Mckenna Llp Cannon Place",
+        "code_postal": "EC4N 6AF",
+        "ville": "London",
+        "pays": "GB"
+      },
+      "activite": {
+        "nomenclature": "SIC-2007",
+        "code": "65110",
+        "libelle": null
+      },
+      "identifiants": {
+        "tva": null,
+        "lei": null
+      },
+      "lien_registre": "https://find-and-update.company-information.service.gov.uk/company/00000006",
+      "data_freshness": "Companies House temps réel (cache 24 h)",
+      "source": "Registres officiels : Brønnøysundregistrene (NO, NLOD), e-Business Register (EE, CC-BY 4.0), Uzņēmumu reģistrs (LV), KBO/BCE (BE), CVR (DK), Companies House (GB, OGL), ARES (CZ), Register právnických osôb (SK, CC-BY 4.0), PRH/YTJ (FI, CC-BY 4.0), Krajowy Rejestr Sądowy (PL), Zefix (CH, OGD), Bolagsverket (SE), GLEIF (CC0)",
+      "disclaimer": "Données rediffusées telles que publiées par les registres officiels, dans un schéma unifié ; `statut` est une normalisation en 3 valeurs, le libellé source est conservé dans `statut_detail`. / Official register data as published, unified schema; `statut` is a 3-value normalization."
+    }
+
+GET /v1/sanctions/check?name=Vladimir%20Putin&birth_year=1952
+  -> 200 (sample of 2026-07-29, arrays truncated to 1 item):
+    {
+      "requete": {
+        "nom": "Vladimir Putin",
+        "annee_naissance": 1952
+      },
+      "nombre_correspondances": 1,
+      "repartition_niveaux": {
+        "forte": 1,
+        "possible": 0,
+        "faible": 0
+      },
+      "correspondances": [
+        {
+          "liste": "ue",
+          "nom_principal": "Vladimir Vladimirovich PUTIN",
+          "score": 93,
+          "niveau": "forte",
+          "regime": "(EU) 2022/330"
+        }
+      ],
+      "troncature": {
+        "tronquee": false,
+        "correspondances_servies": 1,
+        "non_servies": 0,
+        "niveau_non_servi": null,
+        "prefiltre_sature": false,
+        "note": null
+      },
+      "listes_consultees": [
+        {
+          "liste": "ue",
+          "libelle": "Liste consolidée des sanctions financières de l'UE (FSF)",
+          "entrees": 6017,
+          "publication": "2026-07-28"
+        }
+      ],
+      "listes_absentes": []
+    }
+
+Every example above is a real, unmodified extract of a paid response, truncated
+to one element per array. They are dated snapshots, not live data. The full
+input contract and a response example for EVERY endpoint are in the OpenAPI
+spec (https://api.sirenic.eu/openapi.json) and in the x402 payment quote itself.
+
+## Verify before you pay
+
+Can you safely invoice or pay this company? That is the one question Sirenic
+answers in a single call, and it is the question with a deadline: from
+1 September 2026 every VAT-liable French company must be able to RECEIVE
+electronic invoices (issuance is phased — large and mid-size companies from that date,
+SMEs from 1 September 2027). Belgium's B2B mandate has been live since
+1 January 2026.
+
+- FRANCE → /v1/facturation/dossier?siren=&iban= ($0.03). One call returns the
+  recipient's legal identity and obligation dates, the computed intra-EU VAT
+  number checked LIVE against VIES, an IBAN FORM check (structure + key)
+  against official registries with the bank identified, and a deterministic verdict: pret_a_facturer
+  true/false with reasons drawn from a CLOSED list, each tagged blocking or
+  informational and traced to its source. A VIES outage yields
+  tva_non_verifiable (informational) — never a false invalid.
+- BELGIUM & POLAND → /v1/eu/facturation/dossier?pays=&id=&iban= ($0.03). Same
+  verdict shape, plus Peppol reachability for Belgium and, uniquely in Poland,
+  whether the IBAN is actually DECLARED by that taxpayer in the official White
+  List: paying more than 15,000 PLN into an undeclared account costs the buyer
+  the VAT deduction and creates joint liability for the VAT.
+- Or the pieces on their own: /v1/entreprise/{siren}/facturation-prep ($0.02),
+  /v1/iban/verifier/{iban} ($0.005), /v1/tva/verifier/{numero} ($0.003).
+
+All five carry a `provenance` array inside the Ed25519-signed body: for each
+block, the official register it came from, its licence and its `as_of` date.
+An agent can therefore prove to an auditor, months later and offline, exactly
+what it knew when it paid.
+
+Two honest limits, and where each one is written down: the payee-verification
+limit travels in every IBAN payload (verification_titulaire: non_disponible,
+nature_du_controle, non_verifie) AND, on the two invoicing packs when an iban is
+supplied, inside the verdict itself (verdict.non_verifie: account existence,
+holder name) — next to
+the green light, not only in the disclaimer. The non-PDP limit travels in every
+French e-invoicing preparation payload. Both hold for all five routes: Sirenic
+never checks the account holder's name nor the account's existence, and is not
+an accredited platform (PDP/PA) — no access to the restricted central
+directory, and it never issues, transmits, converts or routes invoices.
+IBANs from a published list of known samples are flagged
+(exemple_de_documentation, reason iban_exemple_documentation): well-formed;
+account existence untested. False proves nothing.
+
+## When should an agent call Sirenic?
+
+Trigger moments (verify BEFORE acting): a French company appears in a
+workflow (supplier/customer onboarding, KYB) → /v1/kyb/{siren} ($0.15) or
+/v1/entreprise/{siren} ($0.005); before sending money or signing →
+/v1/sanctions/check ($0.02) + /v1/regulateurs/fr/alertes ($0.01, scams &
+AMF registers); an investment/credit decision → /v1/intelligence/{siren}
+($1.00, signed verdict); several things about the SAME company at once, without
+chaining calls → /v1/entreprise/{siren}/dossier?blocs=… ($0.005 base + one
+price per block, capped at $0.35 — each block costs exactly what its own
+endpoint costs, so grouping never costs more than calling separately; a block
+that cannot be served is NAMED with a reason from a closed list: aucune_donnee,
+non_diffusible or panne_amont, and if EVERY requested block is down the call
+returns 503 and nothing is charged). It is a DUMP of facts, not a verdict:
+choose it over /v1/intelligence when you want the raw blocks and will do your
+own reasoning. Choosing between 2 and 5 French suppliers,
+candidates or competitors → /v1/comparer ($0.12 per company, per-axis
+rankings, never an overall winner, and an explicit comparabilite block that
+says when the companies are NOT comparable); WHICH companies are in trouble right now, rather than « is THIS company in
+trouble » → /v1/bodacc/recherche?famille=&depuis=&departement= ($0.03, up to 100
+BODACC announcements by family + date window + department: insolvency
+proceedings, deregistrations, sales, incorporations, accounts filings…). It is a
+LIST route, so read its two caveats: announcements about sole traders are
+excluded (their name is personal data) and counted, and the judgment's operative
+FREE TEXT is removed everywhere — it names court-appointed administrators with
+their address, so facts living only there (the date of cessation of payments) are
+not served; follow the url_bodacc field. An ongoing relationship → /v1/surveillance/creer
+($0.05/target for 30 days, $0.135 for 90, $0.50 for a year — daily checks
++ signed webhooks); a financial firm
+claims to be regulated → /v1/entreprise/{siren}/agrements ($0.02, French
+company: is it an authorised payment or e-money institution, a payment agent,
+an insurer or a declared telecom operator? EBA PSD2 register refreshed daily,
+plus EIOPA and ARCEP — withdrawals included) or /v1/eu/agrements ($0.01,
+EU-wide MiFID search by name). Belgian listed company, and you want to know
+whether its own managers are buying or selling? →
+/v1/eu/entreprise/BE/{id}/transactions-dirigeants ($0.02, FSMA Art. 19 MAR,
+issuer-level aggregate — nobody is named). Vetting a UK company? →
+/v1/eu/entreprise/GB/{company_number}/dirigeants ($0.01, active officers),
+/beneficiaires-effectifs ($0.02, the PSC register restricted to LEGAL-ENTITY
+controllers since 2026-09-19 — natural persons counted, never named) and
+/insolvabilite ($0.02, liquidation &
+administration cases, or an explicit "no recorded case" answer) — all live
+from Companies House (OGL v3.0). Need its FILED ACCOUNTS? →
+/v1/eu/entreprise/GB/{company_number}/comptes ($0.01, the balance-sheet dates
+decoded from the iXBRL accounts) then /comptes/{date_cloture} ($0.05, the full
+balance sheet, average employees and the P&L when filed) — Companies House
+Accounts Data Product, electronically filed accounts only (~75% of UK
+filings). Its INSOLVENCY NOTICES in the official journal? →
+/v1/eu/entreprise/GB/{company_number}/annonces ($0.02, The Gazette category 24:
+winding-up resolutions and petitions, liquidators, administrators, creditors'
+notices, dividends — coverage partial and said so). Vetting a LATVIAN company? →
+/v1/eu/entreprise/LV/{regnr}/dirigeants ($0.01, officers),
+/insolvabilite ($0.02, proceedings or an explicit "no proceeding" answer),
+/evenements ($0.02, liquidations, mergers and divisions, VID suspensions and
+securing measures, or an explicit "no event" answer), /associes ($0.02,
+members and shareholders — corporate holders named, natural persons counted) and
+/comptes ($0.03, every filed fiscal year in one call) — official Uzņēmumu
+reģistrs / VID open data (CC0, refreshed daily). Vetting a NORWEGIAN company? →
+/v1/eu/entreprise/NO/{orgnr}/evenements ($0.02, legal events: bankruptcy,
+winding-up, compulsory dissolution, strike-off, plus live-checked flags — or an
+explicit "no event" answer), /dirigeants ($0.01, officers and board from the
+daily national roles bulk: management, board and who elected it, partners,
+auditor and accountant — natural persons without any birth date),
+/etablissements ($0.01, local units = the SIRET-like establishments, with
+published headcount) and /comptes ($0.02, annual accounts) — official
+Enhetsregisteret / Regnskapsregisteret (NLOD 2.0). Vetting an ESTONIAN company? →
+/v1/eu/entreprise/EE/{registrikood}/comptes ($0.02, annual-report key figures
+for every published year since 2019, refreshed monthly) and /evenements ($0.02,
+registry rulings refreshed DAILY: striking-off and compulsory-dissolution
+warnings, annual-report fines — early-distress signals a company profile never
+shows — plus every typed entry of the registry cards), /dirigeants ($0.01,
+management board, procurators, liquidators, trustees, partners, contact persons,
+supervisory board and auditors, closed-list roles, natural persons without any
+identifier or birth date) and /associes ($0.02, share register: corporate
+holders named, natural persons counted, share pledges, capital) — official
+e-Business Register open data (RIK, CC BY 4.0); the EE profile also carries
+registre_ee (capital, EMTAK activities, contacts, statutes, successions) and
+gages_commerciaux (commercial pledges).
+Vetting a SWEDISH company? →
+/v1/eu/entreprise/SE/{orgnr}/evenements ($0.02: is it bankrupt, in
+liquidation, in reconstruction, or already struck off? — or an explicit "no
+proceeding" answer) and /comptes ($0.03, every DIGITALLY filed fiscal year in
+one call, iXBRL-decoded). Both from Bolagsverket's free EU high-value
+datasets. Two honest limits, stated in every response: Swedish OFFICERS are
+NOT in the free data (we do not serve them rather than return an empty list),
+and digital filing is optional (~63% of annual reports in 2025, filings from
+2020 on) — an absent company may simply have filed on paper. Vetting a DANISH company? →
+/v1/eu/entreprise/DK/{cvr}/dirigeants ($0.01, live from the CVR register:
+executive board, board of directors with deputies and election method, fully
+liable partners of an I/S or K/S, auditors — active mandates by default,
+?inclure_anciens=true adds the ended ones, which is where founders (stiftere)
+normally are; capped at 300 active / 200 ended mandates, flagged by "tronque"
+while the counts stay exact; no address, no personal identifier).
+Vetting a CZECH company? →
+/v1/eu/entreprise/CZ/{ico}/insolvabilite ($0.02, the ISIR insolvency register
+since 2008: proceedings with court, status, dates and the 100 most recent
+events, or an explicit "no proceeding" answer — publication is compulsory by
+Czech law). LEGAL PERSONS ONLY: sole traders and other natural-person IČOs —
+the majority of Czech identifiers — are refused (404) rather than reported
+clean, because their insolvency is personal data Sirenic does not ingest.
+Watching a POLISH company? →
+/v1/eu/entreprise/PL/{krs}/evenements ($0.02): registry EVENTS derived from the
+official KRS daily bulletin — liquidation, bankruptcy, restructuring, activity
+suspension/resumption, dissolution, mergers, tax and social-security arrears,
+accounts filings, name/seat/capital changes and strike-off, each dated, with the
+gap-free observation window stated in every response (no officers, never a
+PESEL). It does NOT check that the KRS exists — an unknown number returns the
+same empty answer, and the response says so: settle existence with
+/v1/eu/entreprise/PL/{krs} ($0.01, live).
+About to INVOICE a company, or PAY one? That is the
+question above — see "Verify before you pay": /v1/facturation/dossier for
+France, /v1/eu/facturation/dossier for Belgium and Poland.
+Got a NAME but not a SIREN? GET /v1/suggestions?q=… is FREE (no account, no
+API key): up to 5 matches with SIREN, city, postcode, NAF code and
+active/ceased status, from the INSEE Sirene register. Resolve the name for
+free, then buy what you need. 2,000 calls per day per IP. It matches the START
+of the name, then whole words — no typo tolerance and no confidence score; for
+those use GET /v1/recherche ($0.002).
+
+Not sure what identifiers are in front of you? GET /v1/reperer?texte=…
+is FREE: it detects SIREN/SIRET/VAT/LEI (checksum-validated) in raw text
+and returns the recommended call with its price.
+
+DON'T CLEAN UP THE QUERY YOURSELF. Search parameters (?q=, ?nom=) accept what
+an agent naturally produces: quotes, punctuation and unsupported characters are
+STRIPPED, not rejected — no 400 for a stray quote. Paste an identifier as you
+found it and it resolves directly: "SIREN : 552 032 534", a 14-digit SIRET or
+an FR VAT number all land on the right company. A 400 comes back only when
+nothing searchable is left, and no error response is ever billed.
+
+PAY WITH AN API KEY INSTEAD OF x402 (no wallet needed): create an account at
+https://api.sirenic.eu/compte (email + magic link, businesses and private
+individuals alike), buy
+prepaid credits (1 credit = 1 EUR, packs 10/20/50/100 EUR, Stripe invoice
+included). Credits are valid for 12 months from purchase; calls are charged
+first to the credits closest to expiry, and an email is sent 30 days before.
+Send the key on any /v1 call: X-Api-Key: srn_live_… (or
+Authorization: Bearer srn_live_…). Same per-call prices as x402; the response
+carries X-Credits-Charged and X-Credits-Remaining. 150 free calls per month on
+routes <= $0.05 with a verified account. A signed x402 payment always takes
+precedence over a key. Balance: GET /compte/solde (with the key). Insufficient
+balance answers 402 {error: credits_insuffisants} WITHOUT an x402 quote header.
+MCP tools accept the key as the optional api_key argument.
+
+Free endpoints: GET / (this landing), GET /v1/suggestions?q= (company-name
+autocomplete → SIREN), GET /preview/entreprise/55203253400646
+(free sample of the full-profile response), GET /v1/demo/entreprise?siren=
+(free DEMO of GET /v1/entreprise/{siren}, same middlewares and signature as a
+paid call, two fixed SIREN: 552032534 and 652014051, cached 24 h),
+GET /v1/reperer?texte= (identifier
+detection), GET /workflows (catalogue of 12 ready-to-import n8n workflows, each
+one served as a file at GET /workflows/<file>, native nodes and an API key
+only — no community node, no wallet, so they run on n8n Cloud),
+GET /openapi.json, GET /healthz,
+GET /.well-known/api-catalog (RFC 9727 linkset of every machine surface).
+GET / also answers Accept: text/markdown with a Markdown rendering of the
+landing page (same routes, prices and caveats, 43% smaller); the same body is
+served at GET /index.md.
+MCP server (streamable HTTP): POST https://api.sirenic.eu/mcp — manifest at
+/.well-known/mcp.json, server card (SEP-2127) at /mcp/server-card, AI catalog
+(server card, A2A card, skill) at /.well-known/ai-catalog.json, Agent Skill for
+Claude Code, Codex and Cursor at /.well-known/agent-skills/index.json, and how an agent gets
+access (no account / API key / OAuth connector) at /auth.md.
+Every MCP tool takes an optional x_payment argument:
+call it without to get the signable x402 quote back in structuredContent.quote
+({x402Version, accepts[]} — sign one entry, no need to call the REST API), then
+call again with the resulting PAYMENT-SIGNATURE value in x_payment. A2A server (JSON-RPC, a2a-x402 payment extension):
+POST https://api.sirenic.eu/a2a — agent card at /.well-known/agent-card.json.
+Signed responses: every 2xx /v1 response carries a detached Ed25519 signature
+(X-Sirenic-Signature headers) — public key and verification recipe at
+/.well-known/sirenic-signing-key.
+Verify the signature, then read the provenance: EVERY paid JSON /v1 response
+carries a `provenance` array (all routes since 2026-09-06) — one entry per
+block served, each with the official register it comes from, its licence, its
+version and its `as_of` date. `precision_as_of` says what that date MEANS:
+publication_officielle (the upstream authority dated the file), ingestion (only
+Sirenic's load date is known — e.g. OFAC publishes none), consultation (live
+lookup, real cache time, never a faked "now"), or indisponible. Each entry also
+carries the common per-block ENVELOPE: `etat` in a closed list (servi,
+absence_mesuree, absence_non_conclusive, partiel, perime, indisponible,
+sans_objet), `motif` when unavailable, `age_jours` (only for publication or
+ingestion dates), `couverture` (complete / partielle / non_mesurable, with its
+measure) and `confiance` in bands (faible / moyenne / forte — only where a
+measure grounds it, never averaged across blocks). Read the states before the
+numbers: an absence_non_conclusive, indisponible or partiel block is never
+« nothing to report »; only absence_mesuree asserts an absence. Sanctions
+responses also date EACH of the 6 lists in `listes_consultees` with its own
+precision. Register codes are documented at GET /v1/provenance/registres and
+the states, closed lists and reading rules at GET /v1/lecture (both free).
+Together, signature + provenance let an agent prove to an auditor what it knew
+when it paid.
+
+## Data & compliance
+
+Source: INSEE Sirene and INPI RNE via recherche-entreprises.api.gouv.fr,
+Etalab 2.0 open license. Company officers: only name, role and birth year are
+ever exposed (French GDPR/INPI rules). Companies with restricted diffusion
+status return a minimal legal record. Every JSON response carries `source`
+and `disclaimer` fields.
+
+E-invoicing (French 2026 mandate): /v1/entreprise/{siren}/facturation-prep
+returns PREPARATION data for an invoice recipient. Sirenic is not an
+accredited platform (PDP/PA), has no access to the restricted central
+directory, and never issues, transmits, converts or routes invoices.

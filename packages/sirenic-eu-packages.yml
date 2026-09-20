@@ -1,0 +1,64 @@
+generated: '2026-09-19'
+method: searched
+source: registry.npmjs.org metadata for n8n-nodes-sirenic and sirenic-agents; GitHub org https://github.com/sirenic-eu
+  (4 public repos, created 2026-07-17); sirenic-examples README.
+note: 'Sirenic ships no classic REST SDK: the API is GET-only JSON over x402/API key and the provider points TypeScript
+  users at generic @x402/fetch. First-party distributions are agent/automation integrations. PyPI, Maven Central,
+  NuGet, RubyGems, Packagist and crates.io were searched for sirenic* on 2026-09-19: nothing published.'
+packages:
+- language: javascript
+  registry: npm
+  name: n8n-nodes-sirenic
+  url: https://www.npmjs.com/package/n8n-nodes-sirenic
+  install: npm install n8n-nodes-sirenic
+  official: true
+  version: 0.13.0
+  published: '2026-09-19'
+  first_published: '2026-07-28'
+  license: MIT
+  repository: https://github.com/sirenic-eu/n8n-nodes-sirenic
+  kind: n8n community node (Sirenic action node, 61 operations, + SirenicTrigger webhook node with Ed25519 verification)
+  author: Sirenic <contact@sirenic.eu>
+- language: typescript
+  registry: npm
+  name: sirenic-agents
+  url: https://www.npmjs.com/package/sirenic-agents
+  install: npm install sirenic-agents
+  official: true
+  version: 0.1.0
+  published: '2026-07-23'
+  first_published: '2026-07-23'
+  license: MIT
+  repository: https://github.com/sirenic-eu/sirenic-examples/tree/main/sdk/typescript
+  kind: LangChain.js tools (x402 wallet client; depends on @x402/core, @x402/evm, @x402/fetch, viem, zod)
+  note: Single release; not updated since 2026-07-23 while the API grew to 125 routes.
+- language: shell
+  registry: github
+  name: sirenic-eu/sirenic-gemini-extension
+  url: https://github.com/sirenic-eu/sirenic-gemini-extension
+  install: gemini extensions install https://github.com/sirenic-eu/sirenic-gemini-extension
+  official: true
+  version: 1.0.0
+  published: null
+  kind: Gemini CLI extension pointing at the OAuth MCP connector https://api.sirenic.eu/mcp/connecteur (77 tools)
+  note: No registry; version read from gemini-extension.json, no dated release. Last push 2026-09-03.
+- language: python
+  registry: github
+  name: sirenic-eu/sirenic-odoo
+  url: https://github.com/sirenic-eu/sirenic-odoo
+  install: copy sirenic/ into the Odoo 19 addons folder (Odoo.sh / on-premise only)
+  official: true
+  version: null
+  published: null
+  kind: Odoo 19 module (routes generated from openapi.json; API-key rail)
+  note: No registry, no tagged release; last push 2026-09-19.
+- language: typescript
+  registry: github
+  name: sirenic-eu/sirenic-examples
+  url: https://github.com/sirenic-eu/sirenic-examples
+  install: npx tsx examples/pay-and-call.ts
+  official: true
+  version: null
+  published: null
+  kind: quickstarts (curl quote, pay-and-call, MCP setup, A2A client, LangChain/CrewAI) + dated real response samples
+  note: Examples repo, not a package; last push 2026-09-18.

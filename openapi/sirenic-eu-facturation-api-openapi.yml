@@ -1,0 +1,107 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Facturation API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Facturation across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Facturation
+paths:
+  /v1/facturation/dossier:
+    get:
+      summary: Verify a supplier before payment — France (e-invoicing mandate, 1 September…
+      description: 'Invoice verification and supplier verification — verify supplier before payment in France, the invoicing pack of the e-invoicing mandate France September 2026 (all VAT-liable companies must receive): legal identity, obligation dates, intra-EU VAT number checked LIVE against VIES, IBAN form + key check, bank identified, deterministic pret_a_facturer verdict, closed-list reasons. Not a payee verification: no holder name, no account existence check. A VIES outage never yields a false invalid.'
+      x-price: $0.03
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '552032534'
+        description: 9-digit SIREN of the invoice recipient
+      - name: iban
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 40
+        description: Optional supplier IBAN — form check (structure + key) and bank identification before the first payment
+      responses:
+        '200':
+          description: 'destinataire (full e-invoicing preparation), tva_vies (computed number + live VIES status), banque (IBAN form check + bank identification when iban is provided) and verdict {pret_a_facturer, non_verifie[], raisons[]} — closed-list reasons, each with its level (bloquante/information) and source. When an iban is supplied, verdict.non_verifie travels NEXT TO the green light and names what the bank leg never checks: account existence, holder name. Also carries provenance[]: one entry per block served, naming the official register, its licence and its as_of date — inside the Ed25519-signed bytes, so the answer is auditable offline.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                destinataire:
+                  destinataire:
+                    denomination: DANONE
+                    etat_administratif: actif
+                tva_vies:
+                  numero: FR27552032534
+                  statut: valide
+                banque:
+                  iban_normalise: FR1420041010050500013M02606
+                  valide: true
+                  exemple_de_documentation: true
+                  banque:
+                    nom: La Banque Postale
+                    bic: PSSTFRPPXXX
+                  verification_titulaire: non_disponible
+                verdict:
+                  pret_a_facturer: true
+                  non_verifie:
+                  - existence_du_compte
+                  - nom_du_titulaire
+                  raisons:
+                  - code: iban_exemple_documentation
+                    niveau: information
+                    source: IBAN publié comme EXEMPLE de documentation — bien formé ; existence du compte non contrôlée.
+                source: 'Composition Sirenic : préparation e-facturation (INSEE Sirene), VIES (Commission européenne, live), contrôle de forme IBAN + registres bancaires officiels'
+                disclaimer: 'Aide à la décision déterministe (raisons en liste fermée, tracées à leur source) — ni un avis de conformité fiscale, ni une Verification of Payee : le volet bancaire contrôle la FORME et identifie la banque, sans vérifier l''existence du compte ni le nom du titulaire ; la TVA (VIES) et l''état Sirene, eux, sont vérifiés en direct. / Deterministic decision support — neither tax-compliance advice nor a Verification of Payee: the bank leg checks FORM (structure + key digits) and identifies the bank, without checking the account''s existence or the holder''s name; the VAT (VIES) and the Sirene registry status are checked live.'
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Facturation
+      operationId: getV1FacturationDossier
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

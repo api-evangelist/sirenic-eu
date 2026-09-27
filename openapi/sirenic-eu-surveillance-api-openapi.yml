@@ -1,0 +1,203 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Surveillance API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Surveillance across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Surveillance
+paths:
+  /v1/surveillance/creer:
+    get:
+      summary: Create a 30, 90 or 365-day watchlist (daily checks, signed webhooks, e-mail…
+      description: 'Monitoring for France: a 30, 90 or 365-day watchlist (?duree=), recurring KYB & compliance alerts. Each target checked DAILY against official sources; Ed25519-signed webhook and/or e-mail digest, always pollable. Company targets (SIREN): BODACC, status, officers, sanctions/AMF blacklist, PSAN/SGP, Seveso, FR & EU procurement awards. Directors (dirigeant:Name): new/ended offices. Associations (RNA W…): JOAFE notices. Per target (1-100) x duration: $0.05 / $0.135 / $0.50. No account, no refund.'
+      x-price: '$0.05 per target for 30 days, $0.135 per target for 90 days, $0.50 per target for 365 days (billed = that unit price × number of targets, 1-100) — A full-size request quotes up to $50.00, above the $1.00 single-payment cap that x402 clients apply BY DEFAULT since @x402/core 2.23 (spendControls): raise spendControls.maxAmountPerPayment, or set spendControls: false, before signing — otherwise your own client rejects the quote without ever calling us.'
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: cibles
+        in: query
+        required: true
+        schema:
+          type: string
+        example: 552032534,542065479,dirigeant:Bernard Arnault
+        description: '1-100 comma-separated targets: 9-digit SIRENs, RNA numbers (W + 9, associations — JOAFE notices) and/or dirigeant:Name entries'
+      - name: duree
+        in: query
+        required: false
+        schema:
+          type: integer
+          enum:
+          - 30
+          - 90
+          - 365
+          default: 30
+        example: 90
+        description: 'Watch duration in days. Sets the UNIT PRICE per target: 30 = $0.05, 90 = $0.135 (-10%), 365 = $0.50 (-17.8% vs the monthly rate). Payment is final — no pro-rata refund.'
+      - name: webhook
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uri
+        description: 'Public https URL receiving Ed25519-signed event batches (verification recipe: /.well-known/sirenic-signing-key)'
+      - name: email
+        in: query
+        required: false
+        schema:
+          type: string
+          format: email
+        description: E-mail address receiving event digests
+      responses:
+        '200':
+          description: 'The watch token under two names for convenience — surveillance_id and jeton carry the SAME bearer token. Its form is sw_<uuid>.<timestamp>.<Ed25519 signature>: the signature lets a CLIENT verify offline that the token was issued by this server; the SERVER authority is the uuid looked up in its database, so a token presented with a tampered or missing signature segment is still honoured (measured and deliberate — documented here since 2026-09-04 so that a conformance battery does not read it as a defect). Every route that returns the token (creation, state, renewal) returns the full signed form — plus the retained duration (duree_jours), expiry, channels and the pull URL. Events start from now, never retroactive. An expiration_proche event is emitted 7 days before expiry, on every channel.'
+          content:
+            application/json:
+              example:
+                surveillance_id: sw_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.<horodatage_base64url>.<signature_ed25519_base64url>
+                jeton: sw_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.<horodatage_base64url>.<signature_ed25519_base64url>
+                cibles: 2
+                duree_jours: 30
+                expire_le: '2026-08-28T07:36:32.134Z'
+                canaux:
+                  webhook: false
+                  email: false
+                  pull: /v1/surveillance/sw_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                source: Surveillance Sirenic — diffs quotidiens sur sources officielles (Sirene, BODACC, sanctions, AMF, Géorisques, DECP, TED)
+                disclaimer: 'Vérification QUOTIDIENNE : un événement est signalé au plus tard le jour ouvré suivant sa publication par la source. Les correspondances (sanctions, listes AMF) sont des rapprochements de noms à vérifier — jamais une décision. Cible dirigeant : uniquement le suivi des MANDATS publics (nom + année), purgé à l''expiration.'
+        '400':
+          description: Invalid targets, duration, webhook or e-mail (rejected before any settlement). Never charged. / Jamais facturé.
+        '402':
+          description: 'Payment required — amount = the unit price of the requested duration × number of targets. That total is served in BOTH the signed PAYMENT-REQUIRED header and the JSON body (accepts[].maxAmountRequired and price), for this exact request. Until 2026-09-04 the body carried the unit price of the default duration instead: a client reading the body signed too little and was refused.'
+      tags:
+      - Surveillance
+      operationId: getV1SurveillanceCreer
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/surveillance/{jeton}:
+    get:
+      summary: Watchlist status and accumulated events (free — the token IS the capability)
+      security: []
+      parameters:
+      - name: jeton
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The token returned at creation, as jeton (or its alias surveillance_id)
+      responses:
+        '200':
+          description: Status (active / expiree_renouvelable / expiree), targets with last-checked timestamps, last 100 events with delivery status.
+        '404':
+          description: Unknown token.
+      tags:
+      - Surveillance
+      operationId: getV1SurveillanceByJeton
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/surveillance/{jeton}/renouveler:
+    get:
+      summary: Renew a watchlist for 30, 90 or 365 more days
+      description: 'Watchlist renewal: extend an existing company monitoring watchlist by 30, 90 or 365 days (?duree=, default 30, any duration whatever the original) of daily surveillance against official sources — $0.05 / $0.135 / $0.50 per target. The cibles parameter must repeat the exact watched targets: it is what the quote is computed from. Possible until 7 days after expiry, then the watch is purged. No refund, no pro rata.'
+      x-price: '$0.05 per target for 30 days, $0.135 per target for 90 days, $0.50 per target for 365 days (billed = that unit price × number of targets, 1-100) — A full-size request quotes up to $50.00, above the $1.00 single-payment cap that x402 clients apply BY DEFAULT since @x402/core 2.23 (spendControls): raise spendControls.maxAmountPerPayment, or set spendControls: false, before signing — otherwise your own client rejects the quote without ever calling us.'
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: jeton
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cibles
+        in: query
+        required: true
+        schema:
+          type: string
+        description: The exact watched targets (used to compute the quote)
+      - name: duree
+        in: query
+        required: false
+        schema:
+          type: integer
+          enum:
+          - 30
+          - 90
+          - 365
+          default: 30
+        example: 365
+        description: Extension in days — a FREE choice, independent of the original duration. Same unit prices as creation. Counted from the current expiry date (or from now if already expired).
+      responses:
+        '200':
+          description: The retained duration (duree_jours) and the new expiry date.
+          content:
+            application/json:
+              example:
+                surveillance_id: sw_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                jeton: sw_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                duree_jours: 30
+                expire_le: '2026-09-27T07:36:32.134Z'
+                source: Surveillance Sirenic — diffs quotidiens sur sources officielles (Sirene, BODACC, sanctions, AMF, Géorisques, DECP, TED)
+                disclaimer: 'Vérification QUOTIDIENNE : un événement est signalé au plus tard le jour ouvré suivant sa publication par la source. Les correspondances (sanctions, listes AMF) sont des rapprochements de noms à vérifier — jamais une décision. Cible dirigeant : uniquement le suivi des MANDATS publics (nom + année), purgé à l''expiration.'
+        '400':
+          description: Targets differ from the watch, invalid duration, or expiry beyond 400 days from now (horizon_depasse) — payment cancelled. Never charged. / Jamais facturé.
+        '402':
+          description: Payment required — amount = the unit price of the requested duration × number of targets.
+        '404':
+          description: Unknown token (payment cancelled).
+        '410':
+          description: Grace period exceeded — watch purged (payment cancelled).
+      tags:
+      - Surveillance
+      operationId: getV1SurveillanceByJetonRenouveler
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/surveillance/{jeton}/arreter:
+    get:
+      summary: Stop a watchlist and purge its data immediately (free)
+      security: []
+      parameters:
+      - name: jeton
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Stopped; targets (including any watched director names) and events deleted.
+        '404':
+          description: Unknown token.
+      tags:
+      - Surveillance
+      operationId: getV1SurveillanceByJetonArreter
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

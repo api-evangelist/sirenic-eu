@@ -1,0 +1,101 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Score API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Score across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Score
+paths:
+  /v1/score/defaillance/{siren}:
+    get:
+      summary: Company default-risk score (transparent scorecard + BODACC override)
+      description: 'Credit risk scoring for a French company: a default-risk score (0-100) at ~12 months from a transparent scorecard — filed financial ratios (structure, profitability, liquidity, net cash, debt service, trend), company age, and a hard BODACC override (open insolvency/liquidation, or closure for insufficiency of assets). Returns the score, a qualitative band, every component with its threshold, and a confidence level. Decision-support indicator — NOT a solvency opinion or credit rating.'
+      x-price: $0.10
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'score_risque (0-100), classe/risque_12m (qualitative band), every scoring component with value+threshold+points, signaux_bodacc, exercice_reference, confiance, version_modele. Components include a NET CASH axis read from the raw tax-form line items — cash + marketable securities minus bank overdraft, over debt due within one year — which is deliberately distinct from the current-ratio axis: the current ratio counts receivables and inventory as if they were cash. Where computable, the response also carries a ratios_informatifs block holding two figures read from those same line items, each with a note stating its status: the net cash ratio itself — served EVEN WHEN it costs no points, so that ''nothing to flag'' is never confused with ''no data'' — and dettes_fiscales_sociales_sur_va_pourcent (tax and social security liabilities as a share of value added), a FACT that does NOT feed the score and that no public threshold calibrates. The block is absent when neither figure is computable — the case for a majority of companies, because the upstream line-item dataset is republished irregularly and does not cover the most recent financial years. Silence there means missing data, never a good result, and the response says so explicitly: data_freshness carries the DATE of the upstream snapshot actually in use, tresorerie_muette gives the reason the axis made no finding (exercice_non_couvert = that year is not in the snapshot; poste_non_publie = the filed accounts do not carry the line), and note_tresorerie spells it out in both languages. No date is hard-coded in this description on purpose: it would become false the day the producer republishes. Three overrides come before the band, in this order: active BODACC proceedings (''defaut_avere'' / ''procedure_en_cours''), a ceased company (''cessee'', risque_12m ''sans objet'' — a 12-month default risk has no object for an entity that no longer trades), and no computable financial ratio at all (''indetermine'', never ''sain''). In the last two cases the response carries note_classe explaining why; the score and all components are still returned. Decision-support indicator, not a solvency opinion or credit rating (see docs/scoring.md).'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                score_risque: 22
+                classe: sain
+                risque_12m: faible
+                composantes:
+                - axe: liquidite
+                  indicateur: ratio_liquidite_%
+                  valeur: 7.093
+                  seuil: <80/<100
+                  points: 12
+                - axe: dette
+                  indicateur: capacite_remboursement_annees
+                  valeur: 19.515
+                  seuil: <0/>7/>4
+                  points: 10
+                exercice_reference: '2024-12-31'
+                confiance: moyenne
+                version_modele: defaillance-v1.8
+                avertissement_perimetre: 'Comptes SOCIAUX seuls : la santé du GROUPE n''est pas mesurée ; sur une tête de groupe, dette et liquidité peuvent être structurelles. Confiance plafonnée à « moyenne ». / Standalone STATUTORY accounts: GROUP health is not measured; on a group parent, debt and liquidity may be structural. Confidence capped at medium.'
+                signaux_bodacc:
+                  procedure_collective: false
+                  liquidation_judiciaire: false
+                  cloture_insuffisance_actif: false
+                data_freshness: identité stock Sirene (2026-07-01) + ratios financiers + BODACC temps réel
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Score
+      operationId: getV1ScoreDefaillanceBySiren
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  parameters:
+    siren:
+      in: path
+      name: siren
+      required: true
+      schema:
+        type: string
+        pattern: ^\d{9}$
+      example: '552032534'
+      description: 9-digit SIREN (Luhn-validated)
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

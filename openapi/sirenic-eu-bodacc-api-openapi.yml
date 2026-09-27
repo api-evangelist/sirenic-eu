@@ -1,0 +1,145 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Bodacc API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Bodacc across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Bodacc
+paths:
+  /v1/bodacc/recherche:
+    get:
+      summary: Search BODACC legal announcements by criteria (family, date window, department)
+      description: 'Search French BODACC legal announcements by CRITERIA, not by company: pick a family (insolvency proceedings, deregistrations, sales, incorporations, accounts filings, conciliation...), a date window and optionally a department. Answers questions like: which companies entered insolvency proceedings in department 59 this week? Up to 100 announcements, newest first, each with its SIREN, court, town and structured judgment. Sole traders are excluded (their name is personal data) and counted.'
+      x-price: $0.03
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: famille
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - dpc
+          - modification
+          - creation
+          - radiation
+          - collective
+          - vente
+          - immatriculation
+          - divers
+          - conciliation
+          - retablissement_professionnel
+        example: collective
+        description: 'Announcement family (closed list — these are the upstream BODACC codes, not translations): `collective` = insolvency/collective proceedings, `dpc` = accounts filings (the largest family, 26M), `retablissement_professionnel` = professional recovery. Note that `retablissement_professionnel` targets SOLE TRADERS, so this endpoint serves almost nothing for it and reports them under `exclues_personnes_physiques`.'
+      - name: depuis
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+        example: '2026-08-04'
+        description: 'Start of the publication window (YYYY-MM-DD). Required: there is no unbounded search.'
+      - name: jusqu_a
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: Optional end of the window (YYYY-MM-DD). The window may not exceed 366 days.
+      - name: departement
+        in: query
+        required: false
+        schema:
+          type: string
+        example: '59'
+        description: 'Optional French department code: 01-95, 2A, 2B, 971-978.'
+      responses:
+        '200':
+          description: 'Up to 100 announcements, newest first (`dateparution DESC`), each with its BODACC id, publication date, family, notice type (initial / rectificative / cancellation), court, town, postcode, department and a STRUCTURED judgment (nature, date, family) — plus the company SIREN when the register carries one, and the public BODACC URL. ⚠️ The judgment''s operative FREE TEXT is deliberately removed from every announcement: it names court-appointed administrators together with their address. Facts that exist only in that text — the date of cessation of payments, for instance — are therefore NOT in this response; follow `url_bodacc` for the official publication, or GET /v1/entreprise/{siren}/alertes for a single company. `tronque: true` says there were more than 100 matches: narrow the window. `exclues_personnes_physiques` counts the announcements DELIBERATELY withheld because a natural person is PROVEN in them (their name is personal data); `exclues_type_indetermine` counts those withheld because the person type was unreadable — the guard is fail-closed, and conflating the two would claim sole traders where nothing could be established. The served total is ours, after those filters, never the upstream count. An announcement is not a verdict: the insolvency family also contains closures and cancellations, so read the CURRENT state with GET /v1/entreprise/{siren}/alertes or GET /v1/score/defaillance/{siren}.'
+          content:
+            application/json:
+              example:
+                criteres:
+                  famille: collective
+                  depuis: '2026-08-04'
+                  departement: '59'
+                annonces:
+                - id: A202601513770
+                  date_parution: '2026-08-11'
+                  famille: Procédures collectives
+                  type_avis: Avis initial
+                  tribunal: Greffe du Tribunal Judiciaire de Lille
+                  ville: Tourcoing, Lille Cedex
+                  code_postal: 59200, 59009
+                  departement: '59'
+                  departement_nom: Nord
+                  siren: null
+                  jugement:
+                    nature: Autre jugement et ordonnance
+                    date: '2026-07-09'
+                    famille: Extrait de jugement
+                  url_bodacc: https://www.bodacc.fr/pages/annonces-commerciales-detail/?q.id=id:A202601513770
+                - id: A202601503905
+                  date_parution: '2026-08-09'
+                  famille: Procédures collectives
+                  type_avis: Avis initial
+                  tribunal: Greffe du Tribunal de Commerce de Douai
+                  ville: Hornaing
+                  code_postal: '59171'
+                  departement: '59'
+                  departement_nom: Nord
+                  siren: '907941801'
+                  jugement:
+                    nature: Jugement d'ouverture d'une procédure de redressement judiciaire
+                    date: '2026-08-04'
+                    famille: Jugement d'ouverture
+                  url_bodacc: https://www.bodacc.fr/pages/annonces-commerciales-detail/?q.id=id:A202601503905
+                total_servi: 56
+                exclues_personnes_physiques: 8
+                exclues_type_indetermine: 0
+                tronque: false
+                limite: 100
+                consulte_le: '2026-08-11T22:19:24.289Z'
+                source: BODACC (Bulletin officiel des annonces civiles et commerciales), DILA — via l'API Opendatasoft officielle, Licence Ouverte 2.0
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+      tags:
+      - Bodacc
+      operationId: getV1BodaccRecherche
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

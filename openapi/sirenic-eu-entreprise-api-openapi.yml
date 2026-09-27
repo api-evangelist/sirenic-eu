@@ -1,0 +1,1303 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Entreprise API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Entreprise across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Entreprise
+paths:
+  /v1/entreprise/{siren}:
+    get:
+      summary: Full company profile by SIREN
+      description: 'Full French company profile by SIREN: official company data from the French company registry (INSEE Sirene / INPI RNE). One lookup returns legal name, legal form, head office, NAF code, workforce bracket, creation date, active or ceased status, officers with name and role, collective agreement, the intra-EU VAT number and, for LEI holders, the GLEIF level-2 group (groupe_lei: consolidating parents or declared reason for none). The core KYB building block for verifying a French counterparty.'
+      x-price: $0.005
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      - name: geo
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: true = include GPS coordinates (WGS84) of establishments
+      responses:
+        '200':
+          description: 'Full profile: legal name, legal form, head office, NAF, workforce, officers, collective agreements (conventions_collectives, plus conventions_collectives_notes reading out technical IDCC codes such as 9999 = no agreement assigned), VAT number, plus groupe_lei (GLEIF level-2: direct and ultimate consolidating parents with lei, denomination, pays and the declared relationship, or absence_mere with the declared reason; declaration = relation | exception | aucune; sans_objet without a LEI; indisponible marker when the daily golden copy is missing or stale — never a 503 for this block).'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                nature_juridique: '5599'
+                activite_principale: 70.10Z
+                categorie_entreprise: GE
+                tranche_effectif_salarie: '42'
+                date_creation: '1955-01-01'
+                etat_administratif: actif
+                siege:
+                  siret: '55203253400703'
+                  adresse: 59 RUE LA FAYETTE 75009 PARIS
+                  code_postal: '75009'
+                  commune: PARIS
+                dirigeants:
+                - type: personne_morale
+                  siren: '344366315'
+                  denomination: ERNST & YOUNG AUDIT
+                  fonction: Commissaire aux comptes titulaire
+                tva_intracommunautaire: FR27552032534
+                nombre_etablissements: 19
+                index_egapro:
+                - annee: 2025
+                  note: 86
+                source: INSEE Sirene / INPI RNE via recherche-entreprises.api.gouv.fr, licence ouverte Etalab 2.0 ; index Egapro (ministère du Travail) et annuaire RGE (ADEME), licence ouverte Etalab 2.0
+                data_freshness: stock Sirene mensuel (2026-07-01), dirigeants temps réel
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySiren
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/etablissements:
+    get:
+      summary: List establishments (SIRET) of a company
+      description: 'All establishments (SIRET) of a French company: the complete list of business locations registered under one SIREN, official data from the French company registry (INSEE Sirene), head office and branches alike, each with its address and open or closed status. Use it to map the branches and addresses of a company across France, or to check whether a given SIRET is still open. The SIREN identifies the legal entity; the SIRET identifies each of its establishments.'
+      x-price: $0.003
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: Establishments with addresses and open/closed status.
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                nombre_etablissements: 19
+                etablissements:
+                - siret: '55203253400703'
+                  est_siege: true
+                  adresse: 59 RUE LA FAYETTE 75009 PARIS
+                  code_postal: '75009'
+                  commune: PARIS
+                  etat_administratif: actif
+                  activite_principale: 70.10Z
+                  date_creation: '2025-08-19'
+                  date_fermeture: null
+                  enseignes: []
+                  tranche_effectif_salarie: NN
+                source: INSEE Sirene / INPI RNE via recherche-entreprises.api.gouv.fr, licence ouverte Etalab 2.0
+                disclaimer: Données issues de l'open data, fournies en l'état sans garantie. / Open data, provided as is without warranty.
+                data_freshness: stock Sirene mensuel (2026-07-01), dirigeants temps réel
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenEtablissements
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/alertes:
+    get:
+      summary: Legal alerts from BODACC (insolvency, deregistration, business sales)
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Announcements grouped by family (procedures collectives, radiations, ventes/cessions), most recent first, with judgment details. Each announcement carries `role`: `sujet` (this company is the debtor), `partie_citee` or `indetermine`. Since 2026-09-04, insolvency notices of ANOTHER company that merely cite this one as a party (creditor bank, counterparty) are served apart in `mentions_comme_partie` with the real debtor''s name (`sujet_annonce`), and count towards NO verdict — a creditor listed in a debtor''s conciliation judgment used to be scored as if it were in proceedings itself. `denomination` is the Sirene legal name (`denomination_source`), never the trade label of the latest notice.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                procedures_collectives: []
+                radiations: []
+                ventes_cessions: []
+                autres_annonces:
+                  Modifications diverses: 63
+                  Dépôts des comptes: 37
+                total_annonces: 106
+                consulte_le: '2026-07-29T07:28:49.560Z'
+                source: BODACC (DILA) via bodacc-datadila.opendatasoft.com, licence ouverte Etalab 2.0
+                disclaimer: Annonces officielles telles que publiées ; les avis rectificatifs et annulations sont restitués avec leur type, sans fusion. / Official announcements as published; rectifications and cancellations carry their type.
+                data_freshness: BODACC temps réel (API DILA), cache 24 h
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenAlertes
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/contentieux:
+    get:
+      summary: Commercial-court decisions linked to the company (Judilibre open data)
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Commercial-court decisions linked to the SIREN, most recent first (100 max, `tronque` beyond): court and code, date, docket number, closed-list `nature` and `role`, the other legal entities involved (SIREN + Sirene name), `redondante_bodacc` for insolvency judgments already served by /alertes, and the official Judilibre URL. Plus counts, the measured coverage (61.8% of decisions carry a usable identifier) and the source update date. Never a text, a natural person''s name or an amount.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                exhaustivite: partielle
+                avertissement: Une absence de résultat ne vaut pas absence de contentieux.
+                synthese:
+                  nombre_decisions: 1
+                  par_nature:
+                    condamnation_ou_injonction_a_payer: 1
+                decisions:
+                - id_judilibre: 69f4703ccdc6046d4731b4af
+                  date: '2026-04-30'
+                  juridiction: Tribunal de commerce d'Orléans
+                  nature: condamnation_ou_injonction_a_payer
+                  role: demandeur
+                  mode_rattachement: identifiant_etiquete
+                  confiance: certain
+                  url_officielle: https://www.courdecassation.fr/decision/69f4703ccdc6046d4731b4af
+                tronque: false
+                source: 'Cour de cassation — base Judilibre (open data, source juritcom), Licence Ouverte 2.0 ; dernière mise à jour de notre stock : 2026-09-10.'
+                consulte_le: '2026-09-10T11:44:00Z'
+                disclaimer: Liens décision ↔ société par identifiant RCS/SIREN ; couverture partielle mesurée ; aucune donnée de personne physique. / Partial measured coverage; no natural-person data.
+                data_freshness: 'stock Judilibre tcom collecté quotidiennement (dernier passage réussi : 2026-09-10) ; identité Sirene'
+        '400':
+          description: 'Sole proprietorship (`entreprise_individuelle_non_couverte`) or restricted diffusion (`diffusion_partielle_non_couverte`): decisions are never linked to a natural person. Nothing is charged. Never charged. / Jamais facturé.'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: Judilibre stock not built yet (`collecte_en_cours`) or older than 7 days (`photo_perimee`). Nothing is charged.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenContentieux
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/accords-collectifs:
+    get:
+      summary: Company-level collective agreements published on Légifrance (ACCO fund)
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Agreements, amendments and decisions published on Légifrance for the company, most recent first (100 max, `tronque` beyond): nature, title (masked when it names a person), DILA themes, signature / effect / end dates, IDCC, signatory unions, official link; `synthese` (counts, per nature and theme, texts signed in the last 24 months, IDCC coherence with Sirene) and `couverture` (SIRETs searched, texts consulted). Metadata only, never the text.'
+          content:
+            application/json:
+              example:
+                siren: '335146965'
+                synthese:
+                  nombre_textes: 5
+                  dernier_texte: '2025-12-30'
+                  coherence_idcc: identique
+                textes:
+                - id: ACCOTEXT000053386910
+                  nature: avenant
+                  titre: AVENANT N°4 RENOUVELLEMENT ACCORD TELETRAVAIL
+                  themes:
+                  - Télétravail
+                  date_signature: '2025-12-30'
+                  url_legifrance: https://www.legifrance.gouv.fr/acco/id/ACCOTEXT000053386910
+        '400':
+          description: 'Sole proprietorship (`entreprise_individuelle_non_couverte`) or restricted diffusion (`diffusion_partielle_non_couverte`): agreements are never linked to a natural person. Never charged. Never charged. / Jamais facturé.'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: Légifrance API unavailable or not configured (`legifrance_non_configure`). Nothing is charged.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenAccordsCollectifs
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/finances:
+    get:
+      summary: Annual financial data from filed accounts (INPI / Banque de France ratios)
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Revenue, EBITDA, EBIT, net income and financial ratios per fiscal year (filed accounts; a confidential income statement is flagged, its balance sheet kept). Carries `decalage_analytique`: latest filing known at the register (INPI, live) vs latest year analysed, with a closed-list reason.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                nombre_exercices: 8
+                exercices:
+                - date_cloture: '2017-12-31'
+                  chiffre_affaires: 609000000
+                  ebe: 609000000
+                  resultat_net: 176000000
+                  ratios:
+                    taux_endettement: 4.982
+                    autonomie_financiere: 40.738
+                    marge_ebe: 100
+                  qualite:
+                    fiabilite: a_verifier
+                    anomalies:
+                    - ebe_non_calculable
+                    champs_douteux:
+                    - couverture_interets
+                    - ebe
+                    - marge_brute
+                    - marge_ebe
+                    champs_non_renseignes: []
+                perimetre_comptable:
+                  perimetre: social
+                  double_depot_confirme: true
+                controles_coherence:
+                - code: ebe_non_calculable
+                  portee: bloquante
+                  exercices:
+                  - '2017-12-31'
+                comptes_consolides:
+                  perimetre: consolide
+                  nombre_exercices: 8
+                  exercices:
+                  - date_cloture: '2024-12-31'
+                    chiffre_affaires: 27376000000
+                    resultat_net: null
+                    qualite:
+                      fiabilite: exploitable
+                      anomalies:
+                      - resultat_net_non_calcule
+                      - ratio_non_calcule
+                      champs_douteux: []
+                      champs_non_renseignes:
+                      - ratio_liquidite
+                      - resultat_net
+                source: Ratios financiers INPI / Banque de France (comptes annuels déposés) via data.economie.gouv.fr, licence ouverte 2.0
+                data_freshness: jeu ratios_inpi_bce du 2026-06-01
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenFinances
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/marches-publics:
+    get:
+      summary: Public procurement contracts won (official DECP data)
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: Aggregates (count and total amount as TWO bounds — raw per published row, and deduplicated per (buyer, date, amount, CPV) key —, contracts still running, next expiry) plus the 100 most recent contracts with buyer identity resolved, estimated end dates and a per-row publication status (unique, multi-platform, repeated, per-establishment, amendment) with linked rows.
+          content:
+            application/json:
+              example:
+                siren: '130031487'
+                nombre_marches: 26
+                montant_total: 4943495.5
+                nombre_accords_cadres: 18
+                montant_plafonds_accords_cadres: 4162376
+                montant_hors_accords_cadres: 781119.5
+                nombre_montants_enveloppe: 20
+                nombre_modalites_connues: 26
+                montant_enveloppes: 4234476
+                montant_prix_fermes: 709019.5
+                nombre_sous_traitance_connue: 26
+                nombre_sous_traitance_declaree: 16
+                nombre_sous_traitants: 2
+                montant_sous_traite: 20910.24
+                premier_marche: '2023-06-07'
+                dernier_marche: '2026-06-01'
+                marches_en_cours: 18
+                prochaine_echeance: '2026-12-17'
+                marches:
+                - id: '20262026100'
+                  objet: ACTIONS DE FORMATION POUR LA SOUS SPECIALITE E1D ESPACES VERTS LOT 7 POUR LE COMPTE DE LA DELEGATION PAYS DE LA LOIRE DU CNFPT
+                  montant: 100000
+                  montant_modifie: null
+                  lot_numero: 7
+                  co_traitance: false
+                  nombre_titulaires: 1
+                  groupement: null
+                  date_notification: '2026-06-01'
+                  duree_mois: 24
+                  duree_mois_modifiee: null
+                  date_fin_estimee: '2028-06-01'
+                  regime: '2022'
+                  accord_cadre: true
+                  montant_est_enveloppe: true
+                  modalites_execution: Bons de commande
+                  ccag: Fournitures courantes et services
+                  types_prix: Définitif révisable
+                  marche_innovant: false
+                  avance:
+                    attribuee: false
+                    taux: 0
+                  origine:
+                    ue: 0
+                    france: 0
+                  plateforme_source: DGFIP – PES MARCHÉ
+                  avenant: null
+                  sous_traitance:
+                    declaree: false
+                    acte_id: null
+                    montant: null
+                    part_du_montant: null
+                    duree_mois: null
+                    date_notification: null
+                    variation_prix: null
+                    sous_traitant: null
+                  offres_recues: 1
+                  acheteur:
+                    siret: '18001404502245'
+                    nom: CENTRE NATIONAL DE LA FONCTION PUBLIQUE TERRITORIALE
+                  nature: Marché
+                  procedure: Procédure adaptée
+                  code_cpv: 80530000-8
+                  lieu_execution: '49000'
+                liste_tronquee: false
+                source: Données essentielles de la commande publique (DECP consolidées) via data.economie.gouv.fr, licence ouverte 2.0
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenMarchesPublics
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/concurrents-marches:
+    get:
+      summary: Rival contractors on the same CPV segments (public procurement)
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '130031487'
+      responses:
+        '200':
+          description: The company's top-5 CPV segments (last 5 years) and the top-15 rival contractors on those segments over the last 3 years, with contract counts, total amounts and shared segments.
+          content:
+            application/json:
+              example:
+                siren: '130031487'
+                segments_cpv:
+                - cpv4: '7999'
+                  nombre: 7
+                - cpv4: '8053'
+                  nombre: 4
+                periode_comparaison_annees: 3
+                concurrents:
+                - siren: '444523526'
+                  nom: ARTELIA
+                  nombre_marches: 262
+                  montant_total: 116410066.59
+                  segments_communs:
+                  - '7124'
+                  - '7931'
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: Anticipation stock not loaded yet (code `collecte_en_cours`). Nothing is charged.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenConcurrentsMarches
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/documents:
+    get:
+      summary: List official documents filed at the INPI RNE registry
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Legal deeds (actes: statutes, general-meeting minutes...) and filed annual accounts (bilans), each with document ID, label, filing date. Only documents the registry marks as public. Use the ID with /v1/documents/{type}/{id} to download the PDF.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                actes:
+                - id: 6a33ae8b0397b4bf6e0f5118
+                  type: actes
+                  libelle: Copie des statuts mis à jour
+                  date_depot: '2026-06-16'
+                  nom_document: Statuts_Danone_26_mai_2026_signes_2
+                bilans:
+                - id: 6a33a929f9e4b401ad07b51a
+                  type: bilans
+                  libelle: null
+                  date_depot: '2026-05-27'
+                  date_cloture: '2025-12-31'
+                  nom_document: CA_552032534_7501_K00245359617_2025_K
+                total: 208
+                consulte_le: '2026-07-29T07:28:49.560Z'
+                telechargement: GET /v1/documents/{type}/{id} — type = actes | bilans, id = champ `id` ci-dessous ($0.10, PDF)
+                source: INPI — Registre national des entreprises (RNE), documents tels que déposés
+                data_freshness: INPI RNE temps réel, liste en cache 24 h
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenDocuments
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/sante:
+    get:
+      summary: Business-health risk read-out (FR + EN, closed grid, official data only)
+      x-price: $0.15
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Risk read-out from official data: `synthese` (resume FR + resume_en, strengths, warning signs, missing data, verdict, activity trend, confidence level), `grille` (the reconciled evaluation grid, machine-readable codes) and `divergences_modele` (where deterministic guards overruled the model). A model only picks values from closed lists: no free text, no name and no figure of its own. WHAT TO EXPECT ON THIN FILES: entities that file no annual accounts — non-profits, sole traders, companies under a year old, ceased companies — return `verdict: "non_concluant"` with most grid fields set to `non_evaluable`; the prose then states explicitly that no accounts are available and whether that is normal at this age, and a ceased company is flagged with the `entreprise_administrativement_fermee` warning. Measured on a random sample of 47 SIREN: half of them are such files. Includes model, prompt version and cache status. Cached 7 days.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                synthese:
+                  points_forts:
+                  - Résultats nets positifs récurrents
+                  points_vigilance:
+                  - Ratios incohérents dans la source officielle
+                  donnees_manquantes:
+                  - Structure du passif
+                  verdict: sous_reserve
+                  tendance_activite: croissance
+                  niveau_confiance: faible
+                grille:
+                  verdict: sous_reserve
+                  ca_tendance: croissance_forte
+                  ca_regularite: irreguliere
+                  rentabilite_niveau: forte
+                  rentabilite_tendance: volatile
+                  endettement_niveau: eleve
+                  endettement_tendance: alourdissement
+                  autonomie_financiere: correcte
+                  liquidite: echelle_non_etablie
+                  capacite_remboursement: correcte
+                  bfr_exploitation: atypique_negatif
+                  structure_synthese: equilibree
+                  points_forts:
+                  - resultats_nets_positifs_recurrents
+                  points_vigilance:
+                  - ratios_incoherents
+                  confiance_niveau: faible
+                  confiance_motifs:
+                  - incoherences_detectees
+                  donnees_manquantes:
+                  - structure_du_passif
+                divergences_modele:
+                - 'correspondance de criblage : verdict contraste -> sous_reserve'
+                modele: claude-sonnet-5
+                version_prompt: sante-v2
+                genere_le: '2026-08-11T07:51:02.474Z'
+                donnees:
+                  score_completude: 100
+                  data_freshness: 'identité : stock Sirene mensuel (2026-07-01)'
+                depuis_cache: true
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenSante
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/capital:
+    get:
+      summary: Capital / ownership extracted by AI from public INPI articles of association
+      description: 'Ownership and share capital of a French company from the official INPI registry: AI extraction of the latest PUBLIC articles of association — share capital amount, legal form, shareholders (CORPORATE holders named with role and %; natural persons COUNTED with their %, never named — GDPR, since 2026-09-19), notable clauses, confidence level and source document. From public filed deeds — NOT a beneficial-ownership register (RBE) nor a beneficial-owner identification. Extracted once, cached.'
+      x-price: $0.35
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'capital {montant_capital_eur, forme_juridique, associes[name/role/birth-year/pct], clauses_notables, confiance} + document_source. Reconstructed from public filed deeds, NOT a beneficial-ownership register. When `capital.associes` is empty, `capital.motif_absence_associes` says why, in a closed list (since 2026-09-04): `statuts_sans_liste_associes` (the legal form is a société anonyme / SE / SCA whose articles never list shareholders — an empty list is the normal, expected answer) or `aucun_associe_lu_dans_les_statuts` (a form that usually lists them, none was read: treat as an extraction limit). `confiance: faible` alone said nothing of the reason — measured on 4 extractions out of 5.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                modele: claude-sonnet-5
+                capital:
+                  montant_capital_eur: 170739060
+                  forme_juridique: Société anonyme
+                  associes: []
+                  associes_personnes_physiques: 0
+                  detenu_par_personnes_physiques_pct: 0
+                  clauses_notables:
+                  - droit_de_vote_double
+                  confiance: faible
+                version_prompt: capital-v2
+                document_source:
+                  id: 6a33ae8b0397b4bf6e0f5118
+                  nom: Statuts_Danone_26_mai_2026_signes_2
+                  type: actes
+                  date_depot: '2026-06-16'
+                depuis_cache: true
+                source: INPI — actes/statuts publics déposés au registre national des entreprises (RNE)
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No public articles of association to extract for this SIREN.
+        '503':
+          description: Extraction temporarily unavailable (INPI or LLM); payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenCapital
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/pi:
+    get:
+      summary: Industrial-property portfolio (trademarks, patents, designs) from INPI open data
+      description: 'Intellectual property portfolio of a French company from official INPI open data: patents, trademarks and designs — counts plus items with number, title/label, status, ISO dates (trademark filing/registration/expiry, patent publication) and classification (Nice/CIB/Locarno). Designs: one line per filing. An R&D / brand-value signal for due diligence. Trademarks and designs are most-recent-first; patents are NOT sorted upstream (liste_ordre). Inventor names are never returned.'
+      x-price: $0.03
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Three blocks — marques, brevets, dessins_modeles — each with nombre, liste, nombre_unite ("titres", "depots" or "dessins"), liste_tronquee and liste_ordre. date_nature says what a date IS ("depot" or "publication"): it differs between blocks. A trademark always carries date_enregistrement and date_expiration, null when INPI holds none (registration: 30% of measured trademarks). liste_ordre is "date_decroissante" for trademarks and designs, "amont_non_trie" for patents, which INPI neither sorts nor lets us sort: a truncated patent list is a portfolio sample, not its latest filings (note_ordre). Designs are grouped by FILING, one line per filing not per drawing, from one 100-document page per call; past that nombre_majorant is true and nombre counts DESIGNS, an upper bound on filings. No IP: zero counts, still 200.'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                marques:
+                  nombre: 88
+                  liste:
+                  - numero: '4789796'
+                    libelle: THE ONE HOME
+                    statut: Marque enregistrée
+                    date: '2021-07-31'
+                    date_nature: depot
+                    date_enregistrement: '2021-12-24'
+                    date_expiration: '2031-07-31'
+                    classification: 41, 44
+                  liste_tronquee: true
+                  nombre_unite: titres
+                  liste_ordre: date_decroissante
+                brevets:
+                  nombre: 12
+                  liste:
+                  - numero: FR2728873A1
+                    libelle: EMBALLAGE EN FILM DE MATERIAU SOUPLE ET SON PROCEDE DE FABRICATION
+                    date: '1996-07-05'
+                    date_nature: publication
+                    classification: B65D 65/32, B65D 75/58
+                  liste_tronquee: false
+                  nombre_unite: titres
+                  liste_ordre: amont_non_trie
+                dessins_modeles:
+                  nombre: 3
+                  liste:
+                  - numero: '054041'
+                    libelle: Ornementation de supports de communication
+                    date: '2005-08-19'
+                    date_nature: depot
+                    classification: '2003'
+                  liste_tronquee: false
+                  nombre_unite: depots
+                  liste_ordre: date_decroissante
+                source: INPI — bases ouvertes de propriété industrielle (marques, brevets, dessins & modèles)
+                data_freshness: INPI PI open data (marques/brevets hebdo, D&M bimensuel), cache 24 h
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenPi
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/changements:
+    get:
+      summary: New BODACC announcements since a date (poll-mode surveillance)
+      description: 'Company changes monitoring for a French company: the new official BODACC gazette announcements published SINCE a given date (?depuis=YYYY-MM-DD) — the poll endpoint for watchlist and portfolio surveillance. Returns the new announcements (insolvency, deregistration, sales, filings, changes) in reverse-chronological order. Note: detects new BODACC publications, not field-level edits of the Sirene/RNE profile (the monthly stock keeps no history).'
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      - name: depuis
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        example: '2026-01-01'
+        description: List announcements published on or after this date (YYYY-MM-DD)
+      responses:
+        '200':
+          description: New BODACC announcements since `depuis` (reverse-chronological, with famille, type and `role` — `sujet`, `partie_citee` or `indetermine`), nombre/nombre_total, a truncation flag, and changements_fiche.disponible=false (the monthly stock keeps no history). `denomination` is the Sirene legal name, with `denomination_source` (`sirene` | `bodacc_derniere_annonce`) — until 2026-09-04 this route served the raw trade label of the latest notice ("ORANGE STORE, ORANGE"). A SIREN with no new announcement returns an empty list (still 200).
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                denomination: DANONE
+                depuis: '2020-01-01'
+                nouveaux_evenements_bodacc:
+                  nombre: 41
+                  nombre_total: 41
+                  tronque: false
+                  annonces:
+                  - id: B202601212014
+                    date_parution: '2026-06-28'
+                    type_avis: Avis initial
+                    tribunal: Greffe du Tribunal des Activités Economiques de Paris
+                    jugement: null
+                    publication: B
+                    famille: Modifications diverses
+                changements_fiche:
+                  disponible: false
+                  version_stock_courant: '2026-07-01'
+                source: BODACC (DILA) via bodacc-datadila.opendatasoft.com, licence ouverte Etalab 2.0
+                data_freshness: BODACC (bulletin quotidien DILA), cache court ≤ 1 h par (siren, depuis)
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenChangements
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/facturation-prep:
+    get:
+      summary: Prepare an e-invoice for a French recipient (mandate of 1 September 2026)
+      description: 'Supplier onboarding: PREPARE a compliant French e-invoice under the e-invoicing mandate France September 2026 (reception obligatory for every VAT-liable company; issuance phased GE/ETI 2026, SME 2027): legal name & form, status, computed intra-EU VAT number (with VIES pointer), establishments (SIRET) with addresses, NAF code, indicative obligation dates. Preparation only - Sirenic is not an accredited platform (PDP), never accesses the central directory and never issues or routes invoices.'
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '552032534'
+        description: 9-digit SIREN (Luhn-validated) of the invoice RECIPIENT
+      responses:
+        '200':
+          description: Recipient identity (legal name, form, active/ceased, NAF), computed intra-EU VAT number with a VIES-check pointer, head office + establishments (SIRET, addresses), indicative reform calendar from the INSEE size category, the official directory manual-lookup URL, and warnings (ceased company, restricted diffusion). Never confirms PPF/PDP registration.
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                statut_diffusion: totale
+                destinataire:
+                  denomination: DANONE
+                  nature_juridique: '5599'
+                  etat_administratif: actif
+                  activite_principale: 70.10Z
+                  categorie_entreprise: GE
+                tva:
+                  numero_intracommunautaire_calcule: FR27552032534
+                adressage:
+                  siege:
+                    siret: '55203253400703'
+                    adresse: 59 RUE LA FAYETTE 75009 PARIS
+                    code_postal: '75009'
+                    commune: PARIS
+                  nombre_etablissements: 19
+                  etablissements:
+                  - siret: '55203253400703'
+                    est_siege: true
+                    adresse: 59 RUE LA FAYETTE 75009 PARIS
+                    etat_administratif: actif
+                calendrier_reforme:
+                  reception_obligatoire_depuis: '2026-09-01'
+                  emission_obligatoire_depuis: '2026-09-01'
+                  base_calcul: 'catégorie d''entreprise INSEE : GE'
+                avertissements: []
+                data_freshness: 'identité : stock Sirene mensuel (2026-07-01)'
+                disclaimer: Données de préparation fournies à titre indicatif ; Sirenic n'émet, ne transmet ni ne route aucune facture, et ne confirme pas l'enregistrement du destinataire sur le PPF ou une PDP.
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenFacturationPrep
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/dossier:
+    get:
+      summary: Full company file in ONE call — pick your blocks, pay only for those
+      description: 'Full French company file in ONE call: identity is the base, then add the blocks you want and pay only for those — etablissements, alertes_bodacc, contentieux, finances, marches_publics, marches_publics_ue, lobbying, risques_industriels, agrements, pi, documents, facturation_prep, score. Example: blocs=finances,pi,score. Each block costs what its own endpoint costs, total capped at $0.35. A block that cannot be served is NAMED with its reason: no data, not disclosable, or upstream outage.'
+      x-price: $0.005
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '552032534'
+        description: 9-digit SIREN (Luhn-validated), e.g. 552032534
+      - name: blocs
+        in: query
+        required: true
+        schema:
+          type: string
+        example: finances,pi,score
+        description: 'Comma-separated blocks added to the identity base: etablissements, alertes_bodacc, contentieux, finances, marches_publics, marches_publics_ue, lobbying, risques_industriels, agrements, pi, documents, facturation_prep, score. Each is billed at the price of its own dedicated endpoint, on top of the $0.005 base, and the total is capped at $0.35. Duplicates are billed once. An unknown name returns 400 and nothing is charged. Required: there is no implicit ''everything'', so no surprise amount.'
+      responses:
+        '200':
+          description: 'The identity base (same content as GET /v1/entreprise/{siren}), then one key per block actually served under `blocs`. `blocs_absents` lists every requested block that could not be served, each with a reason from a CLOSED list: `aucune_donnee` (a negative answer — no patents, no public contracts), `non_diffusible` (partial Sirene diffusion / GDPR guard) or `panne_amont` (upstream register down at call time). `resume` counts them. If EVERY requested block is `panne_amont`, the call returns 503 instead and the payment is cancelled — you are never charged a supplement for blocks that no register answered. This endpoint is a DUMP of facts: no verdict and no prose (that is GET /v1/intelligence/{siren}).'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                identite:
+                  siren: '552032534'
+                  denomination: DANONE
+                  nature_juridique: '5599'
+                  activite_principale: 70.10Z
+                  categorie_entreprise: GE
+                  etat_administratif: actif
+                blocs_demandes:
+                - finances
+                - pi
+                - score
+                blocs:
+                  finances:
+                    siren: '552032534'
+                    nombre_exercices: 8
+                    exercices:
+                    - date_cloture: '2024-12-31'
+                      chiffre_affaires: 1030000000
+                      ebe: 697000000
+                      resultat_net: 592000000
+                  pi:
+                    marques:
+                      nombre: 88
+                      liste:
+                      - numero: '4789796'
+                        libelle: THE ONE HOME
+                        statut: Marque enregistrée
+                        date: '2021-07-31'
+                        date_nature: depot
+                        classification: 41, 44
+                    brevets:
+                      nombre: 12
+                    modeles:
+                      nombre: 3
+                  score:
+                    siren: '552032534'
+                    score_risque: 22
+                    classe: sain
+                    risque_12m: faible
+                    confiance: moyenne
+                    version_modele: defaillance-v1.8
+                blocs_absents: []
+                resume:
+                  demandes: 3
+                  servis: 3
+                  absents: 0
+                  dont_panne_amont: 0
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenDossier
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/risques-industriels:
+    get:
+      summary: 'Industrial-risk profile: classified ICPE facilities, Seveso status, risk…'
+      description: 'Industrial risk and environment profile of a French company from the official ICPE register (Géorisques/DGPR): classified facilities with Seveso status (upper/lower tier), authorisation regime, activity state, IED flag, nomenclature rubrics and a risk synthesis per SIREN — an ESG and environmental compliance signal on hazardous sites operated by the company. A company with no classified facility returns level aucun (still 200) — the clean answer is the signal.'
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Risk synthesis (niveau_risque_max seveso_seuil_haut → aucun, counters per regime, IED, national priority) plus each facility: AIOT code, SIRET, commune, Seveso status, regime, activity state, nomenclature rubrics, Géorisques link. No facility = level `aucun` (still 200).'
+          content:
+            application/json:
+              example:
+                siren: 095580841
+                synthese:
+                  niveau_risque_max: seveso_seuil_haut
+                  nb_installations: 6
+                  nb_en_exploitation: 6
+                  seveso_seuil_haut: 2
+                  seveso_seuil_bas: 0
+                  par_regime:
+                    autorisation: 2
+                    enregistrement: 4
+                    autres: 0
+                  ied: 0
+                  priorite_nationale: 2
+                installations:
+                - code_aiot: '0005207266'
+                  raison_sociale: TEREGA - Centre de stockage
+                  commune: Lussagnet
+                  code_postal: '40270'
+                  statut_seveso: Seveso seuil haut
+                  regime: Autorisation
+                  etat_activite: En exploitation avec titre
+                  ied: false
+                source: Géorisques — Ministère de la Transition écologique (DGPR), base des installations classées, Licence Ouverte / etalab-2.0
+                data_freshness: stock Géorisques mensuel (extrait 2026-07-23)
+        '400':
+          description: Invalid SIREN. Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: ICPE stock not yet loaded; payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenRisquesIndustriels
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/emploi:
+    get:
+      summary: 'Hiring signals: actively hiring, posting volume, ROME families, pay-range…'
+      description: 'Hiring signals for a French company, derived on demand from France Travail data (snapshot under 24 h, nothing stored): actively-hiring yes/no/unprovable, active-postings count (SIREN-keyed employer page when available, else strict name matching over known locations), top ROME occupation families, contract-type mix, share of postings displaying a pay amount - plus the Egapro gender-equality index and the INSEE workforce bracket. Aggregated signals only, never posting texts or recruiter contacts.'
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: 095580841
+        description: 9-digit SIREN (Luhn-validated)
+      responses:
+        '200':
+          description: signaux_recrutement (recrute_activement true/false/null — null means absence is not provable, annonces_actives, familles_rome top 5, types_contrat, fourchettes_salariales, methode with coverage counters, consulte_le), index_egapro (last 3 years), effectif (INSEE bracket labels), avertissements[]. Aggregated signals only — never posting texts, recruiter contacts or posting ids.
+          content:
+            application/json:
+              example:
+                siren: 095580841
+                denomination: TEREGA
+                signaux_recrutement:
+                  recrute_activement: null
+                  annonces_actives: 0
+                  familles_rome: []
+                  methode:
+                    comptage: correspondance_denomination
+                    zones:
+                      type: departements
+                      interrogees: 5
+                      connues: 12
+                    annonces_examinees: 1050
+                    couverture_complete: false
+                  consulte_le: '2026-08-25T05:39:42.272Z'
+                index_egapro:
+                - annee: 2025
+                  note: 93
+                effectif:
+                  tranche: 500 à 999 salariés
+                  annee: '2023'
+        '400':
+          description: Invalid SIREN; sole proprietorships and restricted-diffusion companies are not covered (never charged). Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: France Travail access not configured or unavailable; payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenEmploi
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/agrements:
+    get:
+      summary: 'Regulatory authorisations: payment/e-money (EBA), insurance (EIOPA), telecom…'
+      description: 'Regulatory authorisation and licences held by a French company, by SIREN: payment institution, e-money institution, account-information provider, payment agent or exempt entity from the EBA PSD2 register (daily), insurance undertaking from EIOPA, telecom operator (electronic-communications operator, ARCEP). Returns authorisation dates, licensed PSD2 services, EEA passporting and withdrawals — a compliance check across three official registers. Not authorised is a paid answer too (200).'
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '953990934'
+        description: 9-digit SIREN (Luhn-validated)
+      responses:
+        '200':
+          description: 'Summary (est_agree, domains, counts) plus each authorisation: domain, status (actif/retire/exempte), entity type, competent authority, authorisation and withdrawal dates, licensed PSD2 services with labels, EEA passporting, LEI or ARCEP code, source reference and extraction date. No authorisation found is still 200 — the EBA register has no legal significance, so absence is not proof.'
+          content:
+            application/json:
+              example:
+                siren: '953990934'
+                denomination: CIRCLE INTERNET FINANCIAL EUROPE SAS
+                resume:
+                  est_agree: true
+                  regime: agrement
+                  domaines:
+                  - monnaie_electronique
+                  nombre_agrements: 1
+                agrements:
+                - domaine: monnaie_electronique
+                  statut: actif
+                  type_entite: établissement de monnaie électronique
+                  autorite: ACPR
+                  date_agrement: '2024-07-01'
+                  date_retrait: null
+                  services:
+                  - code: ES_010
+                    libelle: Émission, distribution et remboursement de monnaie électronique
+                  passeportage:
+                  - AT
+                source: EBA (Payment Institutions Register), EIOPA (Register of Insurance Undertakings), ARCEP (opérateurs déclarés) — reproduction autorisée avec mention de la source.
+                disclaimer: 'Registres publics reproduits tels que publiés. Le registre EBA n''a pas de valeur juridique : l''absence d''inscription ne prouve pas l''absence d''agrément, et l''inscription ne confère aucun droit — vérifiez auprès de l''autorité compétente. Ces données sont disponibles gratuitement auprès de l''EBA, de l''EIOPA et de l''ARCEP.'
+                data_freshness: eiopa-assureurs 2026-07-28, eba-pir 2026-07-28, arcep-operateurs 2026-07-28
+        '400':
+          description: Invalid SIREN. Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: Authorisation stock not yet loaded; payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenAgrements
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/marches-publics-ue:
+    get:
+      summary: European public-procurement awards won (TED, identifier-matched)
+      description: 'European public procurement contract awards won by a French company, from TED (Tenders Electronic Daily, EU Publications Office): government contracts and tenders — buyer, country, subject, notice-level amount, CPV codes, co-winners and official notice link. Identifier-based matching only (SIREN/SIRET incl. spaced variants). Coverage: eForms award notices since 2023-10-25, above EU thresholds; ~57% of award notices carry a usable national identifier — an empty list is not proof of absence.'
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '428634356'
+        description: 9-digit SIREN (Luhn-validated)
+      responses:
+        '200':
+          description: 'Award notices matched by SIREN/SIRET (incl. spaced variants): buyer, country, subject (fr→en), notice-level amount, CPV, co-winners, official TED link, plus explicit coverage caveats (eForms since 2023-10-25, ~57% identifiable, EU thresholds). Empty list is still 200.'
+          content:
+            application/json:
+              example:
+                siren: '428634356'
+                nombre_avis: 1
+                nombre_retourne: 1
+                tronque: false
+                avis:
+                - reference_ted: 425760-2026
+                  date_publication: '2026-06-22'
+                  type_avis: can-standard
+                  objet: Études préliminaires usines d'eau potable
+                  acheteur:
+                    nom: SYNDICAT EAU47
+                    pays: FRA
+                  montant_avis:
+                    valeur: 1250000
+                    devise: EUR
+                    portee: avis entier (tous lots/titulaires)
+                  codes_cpv:
+                  - '71241000'
+                  co_titulaires:
+                  - CABINET MERLIN
+                  identifiants_gagnants:
+                  - '42863435600532'
+                  lien_ted: https://ted.europa.eu/fr/notice/425760-2026/pdf
+                  correspondance:
+                    methode: identifiant
+                    confiance: haute
+                source: TED — Tenders Electronic Daily (ted.europa.eu), Office des publications de l'UE ; réutilisation libre, © Union européenne
+                data_freshness: interrogation TED en direct, cache 24 h
+        '400':
+          description: Invalid SIREN. Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: TED temporarily unavailable; payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenMarchesPublicsUe
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/financements-ue:
+    get:
+      summary: 'EU research funding received (CORDIS: Horizon 2020 and Horizon Europe)'
+      description: 'EU research and innovation funding received by a French company, from CORDIS (European Commission): every Horizon 2020 (2014-2020) and Horizon Europe (2021-2027) project the company appears in — role (coordinator, participant, associated partner, third party), EU contribution, total cost, dates, project status and official CORDIS link — with totals. Matched by the VAT number CORDIS publishes (about 90% of French participations): zero is a non-conclusive absence. Facts, never a score.'
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '319632790'
+        description: 9-digit SIREN (Luhn-validated)
+      responses:
+        '200':
+          description: 'Projects newest first (max 100, `tronque` when cut): `id`, `programme` (HORIZON | H2020), `acronyme`, `titre`, `statut` (signe | clos | termine, with `statut_source`), `debut`, `fin`, `cout_total_eur`, `contribution_ue_max_eur`, `regime_financement`, `appel`, `lien` (cordis.europa.eu), and the company''s `participation` (role from a closed list with `role_source`, `contribution_ue_eur`, `contribution_ue_nette_eur`, `cout_total_eur`, `fin_anticipee`, `pme`, `type_activite`, `nom_publie`). Totals: `nombre_projets`, `nombre_participations`, `contribution_ue_totale_eur`, `en_cours`; `aucun_financement: true` is a NON-conclusive absence (matched by the VAT number CORDIS publishes, about 90% of French participations); `couverture` states programmes and publication date. CC BY 4.0 attribution.'
+          content:
+            application/json:
+              example:
+                siren: '319632790'
+                nombre_projets: 1
+                nombre_participations: 1
+                contribution_ue_totale_eur: 284375
+                en_cours: 1
+                tronque: false
+                projets:
+                - id: '101069508'
+                  programme: HORIZON
+                  programme_libelle: Horizon Europe (2021-2027)
+                  acronyme: SolDAC
+                  titre: Full spectrum SOLar Direct Air Capture & conversion
+                  statut: signe
+                  statut_source: SIGNED
+                  debut: '2022-09-01'
+                  fin: '2027-08-31'
+                  cout_total_eur: 2073781.25
+                  contribution_ue_max_eur: 2073781.25
+                  regime_financement: HORIZON-RIA
+                  appel: HORIZON-CL5-2021-D2-01
+                  lien: https://cordis.europa.eu/project/id/101069508
+                  participation:
+                    role: participant
+                    role_source: participant
+                    contribution_ue_eur: 284375
+                    contribution_ue_nette_eur: 284375
+                    cout_total_eur: 284375
+                    fin_anticipee: false
+                    pme: false
+                    type_activite: entreprise_privee
+                    nom_publie: ARKEMA FRANCE SA
+                aucun_financement: false
+                couverture:
+                  programmes:
+                  - Horizon Europe (2021-2027)
+                  - Horizon 2020 (2014-2020)
+                  publication: '2026-08-06'
+                  note: Entité retrouvée par la TVA publiée (≈ 90 % des participations françaises). / Matched by the published VAT number.
+        '400':
+          description: Invalid SIREN. Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: CORDIS stock not collected yet or older than 75 days (fail-closed); payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenFinancementsUe
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/entreprise/{siren}/lobbying:
+    get:
+      summary: Lobbying profile from the official HATVP interest-representative register
+      description: 'Lobbying and influence profile of a French company from the official HATVP register of interest representatives — a transparency, governance and ESG due diligence signal: registration status, category, lobbying-expense brackets per fiscal year, staff count, recent subjects with intervention domains and action types, clients (for consulting firms), affiliations, declaration defaults and deregistrations. Organisation-level only — no personal data. Not registered is a meaningful answer (still 200).'
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: Registration status (`inscrit`), category, expense brackets per fiscal year, staff count, recent subjects (domains, action types, targeted public-official CATEGORIES — never names), clients, affiliations, declaration defaults, deregistration. Organisation-level only. Not registered = still 200.
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                inscrit: true
+                denomination: DANONE
+                categorie:
+                  code: SCOMCIV
+                  famille: ENTREPRISE
+                date_premiere_publication: '2017-12-05'
+                desinscription: null
+                exercices:
+                - fin: '2025-12-31'
+                  nb_salaries: 1
+                  nb_activites: 8
+                  depenses_tranche: '> = 200 000 euros et < 300 000 euros'
+                  defaut_declaration: false
+                sujets_recents:
+                - date: '2026-04-08'
+                  objet: Soutenir le développement des innovations en faveur de la transition agroécologique, de la collecte et du recyclage du plastique notamment via la consigne
+                  domaines:
+                  - Agriculture, agroalimentaire
+                clients: []
+                source: HATVP — Répertoire des représentants d'intérêts (AGORA), Licence Ouverte 2.0
+                disclaimer: Données DÉCLARATIVES publiées par la HATVP, restituées au niveau de l'organisation (aucune personne physique) et resynchronisées régulièrement — le champ `objet` des sujets est le texte déclaré par l'organisation. Ni un avis ni une appréciation sur la licéité des activités.
+                data_freshness: répertoire HATVP (extrait 2026-07-27)
+        '400':
+          description: Invalid SIREN. Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: HATVP register not yet loaded; payment not settled.
+      tags:
+      - Entreprise
+      operationId: getV1EntrepriseBySirenLobbying
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  parameters:
+    siren:
+      in: path
+      name: siren
+      required: true
+      schema:
+        type: string
+        pattern: ^\d{9}$
+      example: '552032534'
+      description: 9-digit SIREN (Luhn-validated)
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

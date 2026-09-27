@@ -1,0 +1,82 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Documents API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Documents across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Documents
+paths:
+  /v1/documents/{type}/{id}:
+    get:
+      summary: Download an official company document (PDF) from the INPI RNE registry
+      x-price: $0.10
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - actes
+          - bilans
+        description: Document family from the list endpoint
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{24}$
+        description: Document ID from /v1/entreprise/{siren}/documents
+      responses:
+        '200':
+          description: The official PDF as filed at the registry, served as-is at request time (typical size 1-10 MB). Sirenic stores no document. Legal deeds (actes) require an identified account (API key); filed accounts (bilans) are open to x402.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid type or document ID. Never charged. / Jamais facturé.
+        '401':
+          description: 'type=actes without an identified Sirenic account (x-api-key): legal deeds are reserved to accounts since 2026-09-19 (personal data). No payment is requested.'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No public document for this ID (withdrawn or restricted by the registry).
+      tags:
+      - Documents
+      operationId: getV1DocumentsByTypeById
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

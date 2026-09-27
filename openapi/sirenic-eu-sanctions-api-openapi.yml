@@ -1,0 +1,107 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Sanctions API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Sanctions across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Sanctions
+paths:
+  /v1/sanctions/check:
+    get:
+      summary: Sanctions screening against the 6 official lists (UN, EU, OFAC, UK, FR, CH)
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 100
+        example: Vladimir Putin
+        description: Person or company name to screen
+      - name: birth_year
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^\d{4}$
+        description: Optional birth year to refine person matches
+      responses:
+        '200':
+          description: 'Matches with 0-100 confidence score and level (forte/possible/faible), matched alias, source list, regime, birth year, plus the inventory of loaded lists — each with its entry count, publication date and `precision_publication` saying whether that date is the upstream official publication or Sirenic''s ingestion date (OFAC publishes none). Never a bare yes/no. Carries the common `provenance[]` envelope (states and reading rules: GET /v1/lecture, free).'
+          content:
+            application/json:
+              example:
+                requete:
+                  nom: Vladimir Putin
+                  annee_naissance: 1952
+                nombre_correspondances: 1
+                repartition_niveaux:
+                  forte: 1
+                  possible: 0
+                  faible: 0
+                correspondances:
+                - liste: ue
+                  nom_principal: Vladimir Vladimirovich PUTIN
+                  score: 93
+                  niveau: forte
+                  regime: (EU) 2022/330
+                troncature:
+                  tronquee: false
+                  correspondances_servies: 1
+                  non_servies: 0
+                  niveau_non_servi: null
+                  prefiltre_sature: false
+                  note: null
+                listes_consultees:
+                - liste: ue
+                  libelle: Liste consolidée des sanctions financières de l'UE (FSF)
+                  entrees: 6017
+                  publication: '2026-07-28'
+                listes_absentes: []
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Sanctions
+      operationId: getV1SanctionsCheck
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

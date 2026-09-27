@@ -1,0 +1,127 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Marches API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Marches across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Marches
+paths:
+  /v1/marches/expirations:
+    get:
+      summary: 'Tender anticipation: French public contracts expiring within a window'
+      x-price: $0.05
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: cpv
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^\d{2,8}$
+        example: '45'
+        description: CPV prefix (45 = construction works)
+      - name: departement
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^(?:0[1-9]|1\d|2[1-9]|[3-8]\d|9[0-5]|2[AB]|97[1-8]|98[4-8])$
+        example: '69'
+        description: French department code (01-95, 2A, 2B, 971-978, 984-988)
+      - name: fenetre_mois
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 24
+        example: 12
+        description: Window in months (default 12)
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+        example: 1
+        description: 50 contracts per page
+      responses:
+        '200':
+          description: 'Contracts whose ESTIMATED end date (notification + initially declared duration; duration amendments are absent from the DECP source) falls inside the window, sorted by end date: buyer (SIRET + resolved name), incumbent holders, amount (after amendment when published), framework-agreement flag, CPV, department. Buyers typically re-tender 4-9 months before expiry. An empty list is scoped honestly: contracts under EUR 40k excl. VAT are unpublished.'
+          content:
+            application/json:
+              example:
+                filtres:
+                  cpv: '45'
+                  departement: null
+                  fenetre_mois: 6
+                total_marches: 34249
+                page: 1
+                pages: 685
+                marches:
+                - id: '2777529'
+                  objet: Travaux de menuiserie pour l'accueil de la DRFIP 44
+                  acheteur:
+                    siret: '13001292500017'
+                    nom: DIRECTION REGIONALE FINANCES PUBLIQUES PAYS DE LA LOIRE ET DEPARTEMENT LOIRE ATLANTIQUE
+                  montant: 9788.8
+                  accord_cadre: false
+                  montant_est_enveloppe: true
+                  modalites_execution: Marchés subséquents
+                  sous_traitance_declaree: false
+                  lot_numero: null
+                  date_notification: '2025-09-02'
+                  duree_mois: 12
+                  date_fin_estimee: '2026-09-02'
+                  code_cpv: 45421100-5
+                  departement: null
+                  titulaires_sortants:
+                  - siren: '501383251'
+                    nom: SOGEA ATLANTIQUE BTP
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: 'Anticipation stock not loaded yet (code `collecte_en_cours`): the extended DECP re-ingestion has not completed. Nothing is charged; retrying immediately will not help.'
+      tags:
+      - Marches
+      operationId: getV1MarchesExpirations
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

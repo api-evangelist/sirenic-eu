@@ -13,6 +13,25 @@ tags:
 - Company Data
 - Business Registry
 - KYB
+- Sanctions Screening
+- Financial Data
+- Credit Risk
+- VAT Validation
+- IBAN Validation
+- E-Invoicing
+- Public Procurement
+- Open Data
+- France
+- Europe
+- x402
+- Agentic Commerce
+- MCP
+- A2A
+- Company
+tags_raw:
+- Company Data
+- Business Registry
+- KYB
 - Know Your Business
 - Sanctions Screening
 - Financial Data
@@ -30,28 +49,67 @@ tags:
 - A2A
 - Company
 apis:
-- name: Sirenic API
-  description: 'Pay-per-call REST API for official French and European company data: company search and profiles by SIREN/SIRET (INSEE Sirene, INPI RNE), establishments, officers, annual accounts, BODACC legal alerts, default scoring, sanctions screening, KYB dossiers, VAT (VIES) and IBAN checks, e-invoicing readiness, public procurement, and 13 European registers plus LEI/GLEIF. Every /v1 route is GET and paid per call in USDC or EURC via the x402 protocol (HTTP 402) or with an srn_live_ API key and prepaid credits.'
+- name: Sirenic MCP Server
+  description: >-
+    Remote Model Context Protocol server (streamable HTTP) over the same official French and European
+    company-data routes: 77 tools such as search_french_companies, get_french_company_kyb_file, screen_sanctions_lists
+    and prepare_french_invoice_file. Anonymous connect at /mcp — every tool returns an x402 quote until
+    called with a signed payment or an srn_live_ API key; an OAuth 2.0 connector variant at /mcp/connecteur
+    (authorization code + PKCE, dynamic client registration, scope mcp) bills the account's free quota
+    then prepaid credits.
+  humanURL: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/mcp-setup.md
+  baseURL: https://api.sirenic.eu/mcp
+  tags:
+  - MCP
+  - Company Data
+  - KYB
+  - x402
+  properties:
+  - type: MCPServer
+    url: mcp/sirenic-eu-mcp.yml
+  - type: MCPManifest
+    url: well-known/sirenic-eu-mcp.json
+    name: /.well-known/mcp.json (verbatim)
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+  - type: Documentation
+    url: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/mcp-setup.md
+- name: Sirenic A2A Agent
+  description: >-
+    Agent2Agent JSON-RPC endpoint exposing the 116 paid routes as A2A skills (skill ids are the OpenAPI
+    path templates) with the a2a-x402 v0.1 payment extension: a first SendMessage returns an input-required
+    task carrying the x402 quote; the signed PaymentPayload goes back on the same task and the data arrives
+    as a task artifact. Card served at /.well-known/agent-card.json (and the legacy /.well-known/agent.json),
+    graded conformant.
+  humanURL: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/a2a.ts
+  baseURL: https://api.sirenic.eu/a2a
+  tags:
+  - A2A
+  - Agents
+  - Company Data
+  - x402
+  properties:
+  - type: AgentCard
+    url: a2a/sirenic-eu-a2a.yml
+  - type: AgentCard
+    url: a2a/sirenic-eu-agent-card.json
+    name: agent-card.json (verbatim)
+  - type: Documentation
+    url: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/a2a.ts
+- aid: sirenic-eu:sirenic-eu-acheteur-api
+  name: Sirenic Acheteur API
+  description: The Acheteur API from Sirenic — 1 operation(s) for acheteur.
   humanURL: https://api.sirenic.eu/api
   baseURL: https://api.sirenic.eu
   tags:
-  - Company Data
-  - KYB
-  - Business Registry
-  - Sanctions Screening
-  - x402
+  - Acheteur
   properties:
   - type: OpenAPI
-    url: openapi/sirenic-eu-openapi.yml
-  - type: OpenAPI
-    url: https://api.sirenic.eu/openapi.json
-    name: Provider-hosted OpenAPI 3.1 (source of openapi/)
+    url: openapi/sirenic-eu-acheteur-api-openapi.yml
   - type: Documentation
     url: https://api.sirenic.eu/api
   - type: APIReference
     url: https://api.sirenic.eu/api
-  - type: Overlay
-    url: overlays/sirenic-eu-openapi-overlay.yaml
   - type: Authentication
     url: authentication/sirenic-eu-authentication.yml
   - type: OAuthScopes
@@ -78,42 +136,1206 @@ apis:
     url: agentic-access/sirenic-eu-agentic-access.yml
   - type: ToolCrosswalk
     url: mcp/sirenic-eu-tool-crosswalk.yml
-- name: Sirenic MCP Server
-  description: 'Remote Model Context Protocol server (streamable HTTP) over the same official French and European company-data routes: 77 tools such as search_french_companies, get_french_company_kyb_file, screen_sanctions_lists and prepare_french_invoice_file. Anonymous connect at /mcp — every tool returns an x402 quote until called with a signed payment or an srn_live_ API key; an OAuth 2.0 connector variant at /mcp/connecteur (authorization code + PKCE, dynamic client registration, scope mcp) bills the account''s free quota then prepaid credits.'
-  humanURL: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/mcp-setup.md
-  baseURL: https://api.sirenic.eu/mcp
+- aid: sirenic-eu:sirenic-eu-association-api
+  name: Sirenic Association API
+  description: The Association API from Sirenic — 2 operation(s) for association.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
   tags:
-  - MCP
-  - Company Data
-  - KYB
-  - x402
+  - Association
   properties:
-  - type: MCPServer
-    url: mcp/sirenic-eu-mcp.yml
-  - type: MCPManifest
-    url: well-known/sirenic-eu-mcp.json
-    name: /.well-known/mcp.json (verbatim)
+  - type: OpenAPI
+    url: openapi/sirenic-eu-association-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
   - type: ToolCrosswalk
     url: mcp/sirenic-eu-tool-crosswalk.yml
-  - type: Documentation
-    url: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/mcp-setup.md
-- name: Sirenic A2A Agent
-  description: 'Agent2Agent JSON-RPC endpoint exposing the 116 paid routes as A2A skills (skill ids are the OpenAPI path templates) with the a2a-x402 v0.1 payment extension: a first SendMessage returns an input-required task carrying the x402 quote; the signed PaymentPayload goes back on the same task and the data arrives as a task artifact. Card served at /.well-known/agent-card.json (and the legacy /.well-known/agent.json), graded conformant.'
-  humanURL: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/a2a.ts
-  baseURL: https://api.sirenic.eu/a2a
+- aid: sirenic-eu:sirenic-eu-associations-api
+  name: Sirenic Associations API
+  description: The Associations API from Sirenic — 1 operation(s) for associations.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
   tags:
-  - A2A
-  - Agents
-  - Company Data
-  - x402
+  - Associations
   properties:
-  - type: AgentCard
-    url: a2a/sirenic-eu-a2a.yml
-  - type: AgentCard
-    url: a2a/sirenic-eu-agent-card.json
-    name: agent-card.json (verbatim)
+  - type: OpenAPI
+    url: openapi/sirenic-eu-associations-api-openapi.yml
   - type: Documentation
-    url: https://github.com/sirenic-eu/sirenic-examples/blob/main/examples/a2a.ts
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-bodacc-api
+  name: Sirenic Bodacc API
+  description: The Bodacc API from Sirenic — 1 operation(s) for bodacc.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Bodacc
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-bodacc-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-comparer-api
+  name: Sirenic Comparer API
+  description: The Comparer API from Sirenic — 1 operation(s) for comparer.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Comparer
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-comparer-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-demo-api
+  name: Sirenic Demo API
+  description: The Demo API from Sirenic — 1 operation(s) for demo.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Demo
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-demo-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-dirigeant-api
+  name: Sirenic Dirigeant API
+  description: The Dirigeant API from Sirenic — 1 operation(s) for dirigeant.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Dirigeant
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-dirigeant-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-documents-api
+  name: Sirenic Documents API
+  description: The Documents API from Sirenic — 1 operation(s) for documents.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Documents
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-documents-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-entreprise-api
+  name: Sirenic Entreprise API
+  description: The Entreprise API from Sirenic — 21 operation(s) for entreprise.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Entreprise
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-entreprise-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-eu-api
+  name: Sirenic Eu API
+  description: The Eu API from Sirenic — 70 operation(s) for eu.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Eu
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-eu-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-facturation-api
+  name: Sirenic Facturation API
+  description: The Facturation API from Sirenic — 1 operation(s) for facturation.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Facturation
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-facturation-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-facture-api
+  name: Sirenic Facture API
+  description: The Facture API from Sirenic — 1 operation(s) for facture.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Facture
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-facture-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-healthz-api
+  name: Sirenic Healthz API
+  description: The Healthz API from Sirenic — 1 operation(s) for healthz.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Healthz
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-healthz-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-iban-api
+  name: Sirenic Iban API
+  description: The Iban API from Sirenic — 1 operation(s) for iban.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Iban
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-iban-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-intelligence-api
+  name: Sirenic Intelligence API
+  description: The Intelligence API from Sirenic — 1 operation(s) for intelligence.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Intelligence
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-intelligence-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-kyb-api
+  name: Sirenic Kyb API
+  description: The Kyb API from Sirenic — 2 operation(s) for kyb.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Kyb
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-kyb-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-lecture-api
+  name: Sirenic Lecture API
+  description: The Lecture API from Sirenic — 1 operation(s) for lecture.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Lecture
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-lecture-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-marches-api
+  name: Sirenic Marches API
+  description: The Marches API from Sirenic — 1 operation(s) for marches.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Marches
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-marches-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-preview-api
+  name: Sirenic Preview API
+  description: The Preview API from Sirenic — 1 operation(s) for preview.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Preview
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-preview-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-prospection-api
+  name: Sirenic Prospection API
+  description: The Prospection API from Sirenic — 1 operation(s) for prospection.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Prospection
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-prospection-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-provenance-api
+  name: Sirenic Provenance API
+  description: The Provenance API from Sirenic — 1 operation(s) for provenance.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Provenance
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-provenance-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-rapport-api
+  name: Sirenic Rapport API
+  description: The Rapport API from Sirenic — 1 operation(s) for rapport.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Rapport
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-rapport-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-recherche-api
+  name: Sirenic Recherche API
+  description: The Recherche API from Sirenic — 1 operation(s) for recherche.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Recherche
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-recherche-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-regulateurs-api
+  name: Sirenic Regulateurs API
+  description: The Regulateurs API from Sirenic — 1 operation(s) for regulateurs.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Regulateurs
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-regulateurs-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-reperer-api
+  name: Sirenic Reperer API
+  description: The Reperer API from Sirenic — 1 operation(s) for reperer.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Reperer
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-reperer-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-sanctions-api
+  name: Sirenic Sanctions API
+  description: The Sanctions API from Sirenic — 1 operation(s) for sanctions.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Sanctions
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-sanctions-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-score-api
+  name: Sirenic Score API
+  description: The Score API from Sirenic — 1 operation(s) for score.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Score
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-score-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-secteur-api
+  name: Sirenic Secteur API
+  description: The Secteur API from Sirenic — 1 operation(s) for secteur.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Secteur
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-secteur-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-suggestions-api
+  name: Sirenic Suggestions API
+  description: The Suggestions API from Sirenic — 1 operation(s) for suggestions.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Suggestions
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-suggestions-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-surveillance-api
+  name: Sirenic Surveillance API
+  description: The Surveillance API from Sirenic — 4 operation(s) for surveillance.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Surveillance
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-surveillance-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
+- aid: sirenic-eu:sirenic-eu-tva-api
+  name: Sirenic Tva API
+  description: The Tva API from Sirenic — 1 operation(s) for tva.
+  humanURL: https://api.sirenic.eu/api
+  baseURL: https://api.sirenic.eu
+  tags:
+  - Tva
+  properties:
+  - type: OpenAPI
+    url: openapi/sirenic-eu-tva-api-openapi.yml
+  - type: Documentation
+    url: https://api.sirenic.eu/api
+  - type: APIReference
+    url: https://api.sirenic.eu/api
+  - type: Authentication
+    url: authentication/sirenic-eu-authentication.yml
+  - type: OAuthScopes
+    url: scopes/sirenic-eu-scopes.yml
+  - type: ErrorCatalog
+    url: errors/sirenic-eu-problem-types.yml
+  - type: Conventions
+    url: conventions/sirenic-eu-conventions.yml
+  - type: RateLimits
+    url: rate-limits/sirenic-eu-rate-limits.yml
+  - type: Plans
+    url: plans/sirenic-eu-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/sirenic-eu-sandbox.yml
+  - type: DataModel
+    url: data-model/sirenic-eu-data-model.yml
+  - type: Conformance
+    url: conformance/sirenic-eu-conformance.yml
+  - type: Lifecycle
+    url: lifecycle/sirenic-eu-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/sirenic-eu-webhooks.yml
+  - type: AgenticAccess
+    url: agentic-access/sirenic-eu-agentic-access.yml
+  - type: ToolCrosswalk
+    url: mcp/sirenic-eu-tool-crosswalk.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -216,3 +1438,10 @@ x-enrichment:
   artifacts_added: 31
   pass: local-v3
 x-enrichment-notes: 'Second probe round (pricing /offres, /compte, /articles, logo.png, /.well-known/agent-skills/index.json, /mcp/server-card, /.well-known/ai-catalog.json, MCP tools/list, 402 headers, domain-security + security-program probes) was blocked: api.sirenic.eu refused TCP from the probing IP for the remainder of the run after the first burst of fetches. Pointers for Pricing/SignUp/Blog/image were deliberately NOT emitted unverified. Re-run the probe round to complete.'
+x-a2a:
+  verified: true
+  probed: '2026-09-26'
+  url: "https://api.sirenic.eu/.well-known/agent-card.json"
+  grade: "conformant"
+  protocol_version: "0.3"
+  control: 404

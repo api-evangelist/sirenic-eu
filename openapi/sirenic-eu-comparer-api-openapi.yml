@@ -1,0 +1,126 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Comparer API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Comparer across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Comparer
+paths:
+  /v1/comparer:
+    get:
+      summary: Compare 2 to 5 French companies side by side
+      description: 'Company comparison: compare 2 to 5 French companies side by side in one call on official company data — identity, deterministic default-risk score, latest filed accounts (statutory scope) and BODACC insolvency alerts. Benchmarking for supplier selection and vendor shortlist: per-axis rankings, never an overall winner, plus a comparabilite block that flags NOT comparable companies (different sectors, sizes, a holding in the batch). Billed PER COMPANY: signed quote = $0.12 x number of SIREN.'
+      x-price: $0.12 per company (billed = unit price × number of SIREN)
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: sirens
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}(,\d{9}){1,4}$
+        example: 552032534,542065479
+        description: 2 to 5 comma-separated 9-digit SIRENs (Luhn-validated, deduplicated)
+      responses:
+        '200':
+          description: 'One entry per requested SIREN (identity, default-risk score, latest filed accounts with their accounting scope, BODACC alerts, sanctions screening of the legal name), plus per-axis rankings, factual gaps and a comparabilite block listing, as a closed list, why the companies may not be comparable. Nine rankings (risk, revenue, net result, EBITDA margin, lowest debt, liquidity, revenue growth, cash vs short-term debt, seniority) each carry a status in eligibilite_classements with their data, scope, years and coverage: the evaluative risk ranking is served only when the batch is comparable and the ranked scores rest on the same axes; amounts are forbidden across fiscal years, ratios also across sectors or sizes; a forbidden ranking is absent, with its reasons. No overall ranking is ever returned. An unknown SIREN carries trouve=false and is billed as one lookup; if any company cannot be built the whole batch returns 503 and the payment is not settled.'
+          content:
+            application/json:
+              example:
+                nombre_demande: 2
+                nombre_trouve: 2
+                entreprises:
+                - trouve: true
+                  siren: '552032534'
+                  denomination: DANONE
+                  identite:
+                    activite_principale: 70.10Z
+                    categorie_entreprise: GE
+                    creee_en: 1955
+                    etat_administratif: actif
+                  solidite:
+                    score_risque: 22
+                    classe: sain
+                    confiance: moyenne
+                    exercice_reference: '2024-12-31'
+                    version_modele: defaillance-v1.8
+                  finances:
+                    exercice: '2024-12-31'
+                    perimetre: social
+                    chiffre_affaires: 1030000000
+                    resultat_net: 592000000
+                  alertes:
+                    procedure_collective_active: false
+                    liquidation_judiciaire: false
+                    cloture_insuffisance_actif: false
+                    radiations: 0
+                  sanctions:
+                    statut: aucune_correspondance
+                    nombre_correspondances: 0
+                    cible: denomination
+                classements:
+                  chiffre_affaires:
+                  - '542065479'
+                  - '552032534'
+                  anciennete:
+                  - '542065479'
+                  - '552032534'
+                eligibilite_classements:
+                  risque_le_plus_faible:
+                    type: evaluatif
+                    statut: interdit
+                    raison:
+                    - secteurs_differents
+                    - holding_dans_le_lot
+                ecarts:
+                - code: ecart_taille_ca
+                  min: 1030000000
+                  max: 62589489000
+                comparabilite:
+                  fiable: false
+                  avertissements:
+                  - code: secteurs_differents
+                    portee: bloquante
+                    lecture: 'Les entreprises comparées n''ont pas le même code NAF : les scores et les ratios ne se comparent pas d''un secteur à l''autre. / The companies have different NAF activity codes: scores and ratios are not comparable across sectors.'
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+      tags:
+      - Comparer
+      operationId: getV1Comparer
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

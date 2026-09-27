@@ -1,0 +1,148 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Prospection API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Prospection across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Prospection
+paths:
+  /v1/prospection:
+    get:
+      summary: Multi-criteria prospecting over the full registry (100 active companies per…
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: naf
+        in: query
+        required: false
+        schema:
+          type: string
+        example: 62.01Z
+        description: NAF/APE code or prefix (62, 62.01, 62.01Z)
+      - name: departement
+        in: query
+        required: false
+        schema:
+          type: string
+        example: '75'
+        description: French departement (75, 2A, 971…) — exclusive with code_postal
+      - name: code_postal
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Postal-code prefix (2 to 5 digits)
+      - name: forme_juridique
+        in: query
+        required: false
+        schema:
+          type: string
+        description: INSEE legal-category prefix (e.g. 54, 5499)
+      - name: effectif_min
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Minimum workforce (mapped to INSEE brackets)
+      - name: effectif_max
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: age_min
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Minimum company age in years
+      - name: age_max
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: rge
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: true = active RGE certification
+      - name: egapro_min
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: Minimum gender-equality index (0-100)
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Page number — each page is one payment
+      responses:
+        '200':
+          description: Up to 100 active companies (SIREN, name, NAF, legal form, workforce bracket, creation date, head-office postal code/city), stable SIREN order, page_suivante flag.
+          content:
+            application/json:
+              example:
+                criteres:
+                  naf: 62.01Z
+                  departement: '75'
+                  page: 1
+                nombre_resultats: 100
+                page: 1
+                page_suivante: true
+                resultats:
+                - siren: '100000348'
+                  denomination: LES EDITIONS DIGITALES
+                  activite_principale: 62.01Z
+                  forme_juridique: '5710'
+                  tranche_effectif_salarie: NN
+                  date_creation: '2026-01-15'
+                  code_postal_siege: '75011'
+                  commune_siege: PARIS
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Prospection
+      operationId: getV1Prospection
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

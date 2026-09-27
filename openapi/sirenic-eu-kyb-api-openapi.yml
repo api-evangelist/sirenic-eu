@@ -1,0 +1,169 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Kyb API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Kyb across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Kyb
+paths:
+  /v1/kyb/batch:
+    get:
+      summary: 'Batch KYB: 2 to 100 French companies in one call'
+      description: 'Batch KYB and bulk company lookup: full Know Your Business files for 2 to 100 French companies in one call (comma-separated sirens parameter) — bulk due diligence, compliance and onboarding screening of a whole portfolio, each file with per-block provenance (official register + as-of date). Billed per company at $0.105 (30% off the $0.15 unit price); the amount is quoted from the number of SIREN. A SIREN with no diffusible company is returned as trouve=false and billed as one lookup.'
+      x-price: '$0.105 per company (billed = unit price × number of SIREN; 30% off the unit KYB) — A full-size request quotes up to $10.50, above the $1.00 single-payment cap that x402 clients apply BY DEFAULT since @x402/core 2.23 (spendControls): raise spendControls.maxAmountPerPayment, or set spendControls: false, before signing — otherwise your own client rejects the quote without ever calling us.'
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: sirens
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}(,\d{9}){1,99}$
+        example: 552032534,542065479
+        description: 2 to 100 comma-separated 9-digit SIRENs (Luhn-validated, deduplicated)
+      responses:
+        '200':
+          description: 'One entry per requested SIREN: found companies carry the full KYB file with trouve=true; unknown SIRENs carry trouve=false and are billed as one lookup. Fields nombre_demande and nombre_trouve summarize the batch. Each found file carries its own per-block provenance, in the same shape as GET /v1/kyb/{siren}.'
+          content:
+            application/json:
+              example:
+                nombre_demande: 2
+                nombre_trouve: 2
+                entreprises:
+                - trouve: true
+                  siren: '552032534'
+                  identite:
+                    denomination: DANONE
+                    etat_administratif: actif
+                  tva_intracommunautaire: FR27552032534
+                  criblage_sanctions:
+                    statut: correspondances_a_verifier
+                  score_completude: 100
+                  blocs_manquants: []
+                tarification: 'Facturé par SIREN demandé (prix unitaire de lot). Un SIREN sans entreprise diffusible est restitué `trouve: false` et compté comme une consultation. / Billed per requested SIREN; a not-found SIREN counts as one lookup.'
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: 'At least one file could not be built (infrastructure), or sanctions screening was unavailable for a company of the batch (`criblage_sanctions_indisponible`, core block): the WHOLE batch is cancelled, nothing is charged — retry.'
+      tags:
+      - Kyb
+      operationId: getV1KybBatch
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/kyb/{siren}:
+    get:
+      summary: Complete KYB file for a French company (one call)
+      x-price: $0.15
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - $ref: '#/components/parameters/siren'
+      responses:
+        '200':
+          description: 'Identity, officers, BODACC legal alerts, filed financials, sanctions screening of the company and each officer (6 official lists), computed VAT number, completeness score with missing blocks. The screening block also reports every list consulted with its entry count, publication date and what that date means. Carries the common `provenance[]` envelope (states and reading rules: GET /v1/lecture, free). Screening status is qualification-aware since 2026-09-04: `correspondances_a_verifier` only when at least one match weighs in the shared concordance table (label identity, enclosing name, included name, near-homonym, short label, unqualifiable); `rapprochements_partiels_seulement` when matches exist but every one is a partial resemblance (likely homonymy on a generic token) — served, counted by no verdict; `aucune_correspondance` / `aucune_correspondance_partielle` unchanged. Statutory auditors (commissaires aux comptes) are no longer screened and are listed in `criblage_sanctions.cibles_ecartees` with the reason: measured on 11 files, 22% of all matches came from audit firms (KPMG alone: 12 identical matches on two unrelated clients).'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                identite:
+                  denomination: DANONE
+                  nature_juridique: '5599'
+                  activite_principale: 70.10Z
+                  etat_administratif: actif
+                  date_creation: '1955-01-01'
+                  siege:
+                    siret: '55203253400703'
+                    code_postal: '75009'
+                    commune: PARIS
+                  nombre_etablissements: 19
+                tva_intracommunautaire: FR27552032534
+                alertes_bodacc:
+                  procedures_collectives: []
+                  radiations: []
+                  total_annonces: 106
+                finances:
+                  nombre_exercices: 8
+                  exercices:
+                  - date_cloture: '2024-12-31'
+                    chiffre_affaires: 1030000000
+                    resultat_net: 592000000
+                criblage_sanctions:
+                  statut: correspondances_a_verifier
+                  cibles:
+                  - cible: DANONE
+                    role: entreprise
+                    nombre_correspondances: 0
+                    correspondances: []
+                    troncature:
+                      tronquee: false
+                      correspondances_servies: 0
+                      non_servies: 0
+                      niveau_non_servi: null
+                      prefiltre_sature: false
+                      note: null
+                  cibles_non_criblees: []
+                score_completude: 100
+                blocs_manquants: []
+                data_freshness: 'identité : stock Sirene mensuel (2026-07-01)'
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: 'Sanctions screening unavailable when the file was built (core block, CDU decision of 2026-09-05): file NOT served, payment cancelled — retry. Partial list outages are still served and flagged in `listes_absentes`.'
+      tags:
+      - Kyb
+      operationId: getV1KybBySiren
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  parameters:
+    siren:
+      in: path
+      name: siren
+      required: true
+      schema:
+        type: string
+        pattern: ^\d{9}$
+      example: '552032534'
+      description: 9-digit SIREN (Luhn-validated)
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

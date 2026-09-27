@@ -1,0 +1,81 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Suggestions API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Suggestions across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Suggestions
+paths:
+  /v1/suggestions:
+    get:
+      summary: 'FREE — French company-name autocomplete: name → SIREN (max 5 results, no…'
+      security: []
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        example: carrefour
+        description: Start of the company name (3-100 chars once cleaned), or a 9-digit SIREN — labelled or spaced resolves directly and bypasses the 3-char floor. Matches the START of the registered name, then whole words; no typo tolerance (that is GET /v1/recherche).
+      responses:
+        '200':
+          description: 'Up to 5 suggestions from the INSEE Sirene register (open data): siren, denomination, postcode, commune, NAF code and `actif` (null when the register states no status — never false by default). Companies and sole traders whose record is publicly diffusible; entities under partial diffusion are never suggested. Ranking puts an exact name match first, then large enterprises (INSEE category), then name similarity. Like every /v1 response this one is Ed25519-signed in the headers and verifiable offline — it simply carries no `provenance` block, and no match-confidence score: for those, and for typo tolerance, use GET /v1/recherche ($0.002).'
+          content:
+            application/json:
+              example:
+                suggestions:
+                - siren: '552032534'
+                  denomination: DANONE
+                  code_postal: '75009'
+                  commune: PARIS
+                  code_naf: 70.10Z
+                  actif: true
+                - siren: '430474262'
+                  denomination: DANONE DAIRY ASIA
+                  code_postal: '75009'
+                  commune: PARIS
+                  code_naf: 70.10Z
+                  actif: true
+                gratuit: true
+                limite: 5
+                source: Base Sirene locale (INSEE, open data), version 2026-07-01 — personnes morales et entrepreneurs individuels en diffusion totale.
+                pour_aller_plus_loin: 'Fiche complète : GET /v1/entreprise/{siren} ($0.005). Recherche tolérante aux fautes de frappe, avec score de confiance : GET /v1/recherche ($0.002).'
+                disclaimer: Correspondance sur le DÉBUT de la dénomination, puis sur les mots entiers ; sans tolérance aux fautes de frappe et plafonnée à 5 résultats. / Prefix and whole-word match only, no fuzzy matching, capped at 5 results.
+        '400':
+          description: '`q` missing, or — once unsupported characters are stripped — shorter than 3 characters or over 100. A SIREN (9 digits, labelled or spaced) bypasses the 3-character floor.'
+        '429':
+          description: 'Free quota exhausted: 2,000 calls per day per IP, or 60 per minute. The paid GET /v1/recherche has no such quota.'
+        '503':
+          description: Local Sirene stock not loaded. This endpoint never falls back to the upstream public API, whose rate limit is shared with the paid routes.
+      tags:
+      - Suggestions
+      operationId: getV1Suggestions
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

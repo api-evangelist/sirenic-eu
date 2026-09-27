@@ -1,0 +1,83 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Tva API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Tva across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Tva
+paths:
+  /v1/tva/verifier/{numero}:
+    get:
+      summary: Validate an EU intra-community VAT number (VIES) before invoicing or paying
+      description: 'EU VAT validation against the official VIES service: validate any intra-community VAT number (all member states) for compliance and due diligence. This tax id check is the tax half of verify supplier before payment, and a required check under the e-invoicing mandate France September 2026. Returns valid/invalid/unavailable status with the VIES consultation identifier as proof — VAT number validation usable across Europe for KYB and supplier onboarding.'
+      x-price: $0.003
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: numero
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[A-Z]{2}[A-Za-z0-9+*]{2,12}$
+        example: FR27552032534
+        description: Full VAT number with country prefix, e.g. FR27552032534
+      responses:
+        '200':
+          description: Status valide/invalide/indisponible with registered name and address when provided, plus the VIES consultation identifier.
+          content:
+            application/json:
+              example:
+                numero: FR27552032534
+                pays: FR
+                statut: valide
+                nom: SA DANONE
+                adresse: 59 RUE LA FAYETTE 75009 PARIS
+                request_identifier: null
+                verifie_le: '2026-07-29T07:29:08.915Z'
+                valide: true
+                source: VIES — Commission européenne (service officiel de validation TVA)
+                disclaimer: Statut au moment de la consultation ; en cas d'indisponibilité du service de l'État membre, le statut est `indisponible` (jamais un faux invalide).
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Tva
+      operationId: getV1TvaVerifierByNumero
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

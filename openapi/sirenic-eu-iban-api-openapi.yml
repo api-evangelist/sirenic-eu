@@ -1,0 +1,90 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Iban API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Iban across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Iban
+paths:
+  /v1/iban/verifier/{iban}:
+    get:
+      summary: IBAN form check (structure + key) and bank identification from official…
+      description: 'IBAN verification and bank validation for SEPA payments: a FORM check to verify a supplier before payment — ISO 13616 structure + mod-97 key, plus bank identification from FREE official sources (FR via ACPR/REGAFI incl. LEI and SIREN; BE NBB; AT OeNB incl. LEI; NL BIC list; DE Bundesbank file). French BICs via GLEIF/SWIFT BIC-to-LEI. NOT a payee verification for instant payments: neither the holder name nor the account''s existence is checked (verification_titulaire: non_disponible).'
+      x-price: $0.005
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: iban
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 15
+          maxLength: 42
+        example: FR1420041010050500013M02606
+        description: IBAN (spaces and dashes tolerated)
+      responses:
+        '200':
+          description: 'Structure/length/mod-97 checks, identified bank when a free official register covers the country (FR: name+LEI+SIREN via ACPR/REGAFI; BE, AT, NL: name+BIC; DE when the Bundesbank file is loaded; FR banks get a BIC via the GLEIF/SWIFT LEI mapping) and ALWAYS verification_titulaire: non_disponible — an invalid IBAN is a meaningful (still 200) answer. Next to `valide`: nature_du_controle (forme | forme_et_registres — did a bank register actually answer?), non_verifie [account existence, holder name] and exemple_de_documentation, true for IBANs on a published list of known samples (well-formed; account existence untested) — false proves nothing.'
+          content:
+            application/json:
+              example:
+                iban_normalise: FR1420041010050500013M02606
+                valide: true
+                controles:
+                  pays_connu: ok
+                  longueur: ok
+                  mod97: ok
+                code_banque: '20041'
+                nature_du_controle: forme_et_registres
+                non_verifie:
+                - existence_du_compte
+                - nom_du_titulaire
+                exemple_de_documentation: true
+                banque:
+                  identifiee: true
+                  nom: La Banque Postale
+                  bic: PSSTFRPPXXX
+                  lei: 96950066U5XAAIRCPA78
+                  siren: '421100645'
+                verification_titulaire: non_disponible
+                disclaimer: 'Contrôle de FORME (structure ISO 13616 + clé mod 97-10) et registres publics uniquement — ceci n''est PAS une Verification of Payee au sens du règlement (UE) 2024/886 (le schéma VoP est réservé aux prestataires de services de paiement) : le nom du TITULAIRE du compte n''est jamais vérifié. L''existence du compte n''est pas contrôlée. / Format check (ISO 13616 structure + mod 97-10 check digits) and public registers only — NOT a Verification of Payee: the account holder''s name is never checked and the account''s existence is not tested.'
+        '400':
+          description: Malformed IBAN parameter. Never charged. / Jamais facturé.
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+      tags:
+      - Iban
+      operationId: getV1IbanVerifierByIban
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

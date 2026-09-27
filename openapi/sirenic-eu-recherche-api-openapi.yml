@@ -1,0 +1,88 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Recherche API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Recherche across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Recherche
+paths:
+  /v1/recherche:
+    get:
+      summary: Search French companies by name or SIREN (top 10)
+      description: 'French company search and company lookup by name or SIREN in the official French company registry (INSEE Sirene / INPI RNE open data). Name search returns the top 10 matches with identity, SIREN, NAF code, city and active/ceased status, plus a score_confiance (0-1 match confidence) that helps disambiguate homonyms. The entry point to official data and company data on France: resolve a trading name to its SIREN identifier before pulling the full company profile, filings or financials.'
+      x-price: $0.002
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        example: danone
+        description: 'Company name, or a French identifier (SIREN, SIRET, VAT) — spaced or labelled ("SIREN : 552 032 534") resolves directly. Unsupported characters are stripped, not rejected; 400 only if nothing searchable is left (1-100 chars once cleaned).'
+      responses:
+        '200':
+          description: 'Top 10 matches with identity, SIREN, NAF, city, status and score_confiance (0-1 match confidence). When no result actually resembles the query (best confidence < 0.5), the body carries aucune_correspondance_fiable: true and a bilingual note_correspondance — the registry''s closest guesses are still listed, but they are not the company you asked for. Served from the local Sirene index; if an index stage is abandoned (time budget exceeded or query error), the call falls back to the real-time registry API (data_freshness says so). Only when that fallback fails too is a partial answer served — flagged by resultats_partiels: true and the abandoned stage named in etages_abandonnes (always present; empty array = complete top 10). A degraded answer is never sold as complete.'
+          content:
+            application/json:
+              example:
+                total_results: 10
+                resultats:
+                - siren: '552032534'
+                  denomination: DANONE
+                  statut_diffusion: totale
+                  etat_administratif: actif
+                  activite_principale: 70.10Z
+                  commune_siege: PARIS
+                  code_postal_siege: '75009'
+                  score_confiance: 1
+                source: INSEE Sirene / INPI RNE via recherche-entreprises.api.gouv.fr, licence ouverte Etalab 2.0
+                disclaimer: Données issues de l'open data, fournies en l'état sans garantie. / Open data, provided as is without warranty.
+                etages_abandonnes: []
+                data_freshness: stock Sirene mensuel (2026-08-01), dirigeants temps réel
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: 'The local index was degraded (a stage abandoned under its time budget or on a query error) and returned nothing, AND the real-time registry is unavailable (error: recherche_indisponible) — or the local stock is absent and the registry is down (error: amont_indisponible). Nothing is charged, retry in a few seconds.'
+      tags:
+      - Recherche
+      operationId: getV1Recherche
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

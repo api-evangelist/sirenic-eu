@@ -1,0 +1,100 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Intelligence API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Intelligence across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Intelligence
+paths:
+  /v1/intelligence/{siren}:
+    get:
+      summary: Company intelligence report — every block cross-referenced, closed-list…
+      x-price: $1.00
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '552032534'
+        description: 9-digit SIREN
+      responses:
+        '200':
+          description: 'Identity, officers, financials with 3-year trend, sector positioning (NAF benchmarks), failure-risk score, BODACC alerts, commercial-court decisions (Judilibre, partial coverage), sanctions screening (6 lists, company + officers), procurement (French DECP + EU TED), IP, cached capital structure, industrial-risk synthesis (Seveso/ICPE), AMF PSAN/SGP registers, HATVP lobbying summary, live VIES VAT check — plus closed-list signals traced to their register source, a deterministic verdict (solide/correct/fragile/critique/indeterminable) with `synthese.motifs_verdict` (closed-list codes that decided it) and `synthese.verdict_plafonne_par` (name-match doubts that capped a would-be « solide » at « correct » — when non-empty, read « correct » as « correct subject to verification »; v1.6), `synthese.reserves` / `portee` / `confiance_financiere` / `par_domaine` (v1.7: closed-list reading caveats, scope, score confidence band and a ten-domain projection of blocks already served — the verdict word is unchanged), and strengths/vigilance points. Ed25519-signed (v1.2). Carries the common `provenance[]` envelope (states and reading rules: GET /v1/lecture, free). AMF blacklist (since 2026-09-04): `risques.alertes_amf` serves the matches with score, level and qualification from the shared screening analyser; the vigilance signal `correspondance_liste_noire_amf` is raised only when a match weighs in the concordance table, otherwise the informative `rapprochement_liste_noire_amf_partiel` is emitted and no vigilance point is added. Since 2026-09-06 a failure score in the « vigilance » band raises `score_defaillance_vigilance` — a vigilance point and the verdict motif (negative, not damning: caps at « correct »), so a « correct » decided by the score alone is never served with an empty `points_vigilance`; a « correct » with no vigilance point now reads « solid not granted, see motifs_verdict ».'
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                type_rapport: intelligence
+                version_rapport: '1.4'
+                identite:
+                  denomination: DANONE
+                  categorie_entreprise: GE
+                  activite_principale: 70.10Z
+                  etat_administratif: actif
+                tva_vies:
+                  statut: valide
+                risques:
+                  score_defaillance:
+                    score_risque: 22
+                    classe: sain
+                    risque_12m: faible
+                signaux:
+                - signal: propriete_industrielle_presente
+                  source: bases PI INPI
+                  detail: 112 titre(s)
+                synthese:
+                  verdict_global: solide
+                  points_forts:
+                  - anciennete_etablie
+                  points_vigilance: []
+                score_completude: 100
+                blocs_manquants: []
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+        '503':
+          description: 'Sanctions screening unavailable when the report was built (core block, CDU decision of 2026-09-05): report NOT served, payment cancelled — retry. Secondary blocks (VIES VAT check included) are served as `blocs_manquants` instead.'
+      tags:
+      - Intelligence
+      operationId: getV1IntelligenceBySiren
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

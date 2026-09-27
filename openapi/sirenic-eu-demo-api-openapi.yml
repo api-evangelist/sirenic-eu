@@ -1,0 +1,61 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Demo API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Demo across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Demo
+paths:
+  /v1/demo/entreprise:
+    get:
+      summary: FREE DEMO — the exact GET /v1/entreprise/{siren} response for two fixed SIREN…
+      security: []
+      parameters:
+      - name: siren
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - '552032534'
+          - '652014051'
+          default: '552032534'
+        description: One of the two demo SIREN. Any other value → 400 with the allowed list (the paid route serves any SIREN).
+      responses:
+        '200':
+          description: Same structure as the paid route (plus a `_demo` note), served from a 24 h in-process cache, signed like every 2xx of /v1.
+        '400':
+          description: 'SIREN outside the demo list. Nothing was charged: this route is not priced.'
+        '404':
+          description: Demo SIREN unknown upstream (should not happen in production).
+      tags:
+      - Demo
+      operationId: getV1DemoEntreprise
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

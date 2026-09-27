@@ -1,0 +1,112 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Facture API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Facture across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Facture
+paths:
+  /v1/facture/verifier:
+    get:
+      summary: Invoice verification — cross-check the identifiers printed on a French invoice
+      description: 'Invoice verification for France — cross-check the identifiers PRINTED ON an invoice in one call: SIREN against the official registry (existence, active status, live), the VAT number on the invoice against the one computed from the SIREN AND live against VIES, the IBAN (ISO form, key digits, bank identified). Deterministic verdict coherent/incoherent/inverifiable, closed-list reasons. Flags a VAT that belongs to another company or a ceased supplier. Not a payee verification.'
+      x-price: $0.02
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: siren
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        example: '552032534'
+        description: 9-digit SIREN printed on the invoice
+      - name: tva
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 20
+        example: FR27552032534
+        description: VAT number printed on the invoice — cross-checked against the one computed from the SIREN AND live against VIES. At least one of tva/iban is required (400 otherwise)
+      - name: iban
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 40
+        description: IBAN printed on the invoice — ISO form + key digits + bank identification (never a holder-name check). At least one of tva/iban is required
+      responses:
+        '200':
+          description: controles.entreprise (Sirene status, live), controles.tva {fournie, attendue_pour_ce_siren, correspond_au_siren, vies} and controles.iban (form check + bank) as requested, plus verdict coherent/incoherent/inverifiable with closed-list raisons[] traced to their source. Flags a VAT number that belongs to ANOTHER company, a ceased supplier, or a key-invalid IBAN. A VIES outage yields inverifiable, never a false invalid; non_verifie names what the bank leg never checks (a valid-but-swapped IBAN is not detectable).
+          content:
+            application/json:
+              example:
+                siren: '552032534'
+                etat_administratif: actif
+                controles:
+                  tva:
+                    fournie: FR27552032534
+                    attendue_pour_ce_siren: FR27552032534
+                    correspond_au_siren: true
+                    vies:
+                      statut: valide
+                  iban:
+                    valide: true
+                    exemple_de_documentation: true
+                    banque:
+                      identifiee: true
+                verdict: coherent
+                raisons:
+                - code: iban_exemple_documentation
+                  niveau: information
+                  source: IBAN publié comme EXEMPLE de documentation — bien formé ; existence du compte non contrôlée.
+                non_verifie:
+                - existence_du_compte
+                - nom_du_titulaire
+                source: 'Composition Sirenic : INSEE Sirene (état, live), croisement TVA calculée (clé FR déterministe), VIES (Commission européenne, live), contrôle de forme IBAN + registres bancaires officiels'
+                disclaimer: 'Croisement déterministe des identifiants affichés par une facture (raisons en liste fermée, tracées à leur source) — ni un avis de conformité fiscale, ni une Verification of Payee : le volet bancaire contrôle la FORME et identifie la banque, sans vérifier l''existence du compte ni le nom du titulaire — un IBAN valide mais substitué n''est pas détectable ici. / Deterministic cross-check of the identifiers printed on an invoice — neither tax advice nor a Verification of Payee: the bank leg checks FORM and identifies the bank; a valid-but-swapped IBAN cannot be detected here.'
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: No diffusible company for this SIREN.
+      tags:
+      - Facture
+      operationId: getV1FactureVerifier
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

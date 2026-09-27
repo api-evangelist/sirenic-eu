@@ -1,0 +1,116 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Associations API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Associations across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Associations
+paths:
+  /v1/associations/recherche:
+    get:
+      summary: Search French associations by name (RNA, top 20)
+      description: 'Search French associations (loi 1901) by name in the Répertoire national des associations (RNA, Ministry of the Interior): trigram similarity on the normalised title, optional postal-code, department and position filters (active, dissoute, supprimee), top 20 with score_confiance and the RNA number to use on /v1/association/{rna}. Associations with AND without a SIREN; the legacy file (no declaration since 2009) is flagged fichier_source: import. Excludes Alsace-Moselle (local law).'
+      x-price: $0.002
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+        example: croix rouge
+        description: Association title, or an RNA number (resolved directly)
+      - name: code_postal
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^\d{2,5}$
+        example: '75014'
+        description: Postal code or prefix (2-5 digits)
+      - name: departement
+        in: query
+        required: false
+        schema:
+          type: string
+        example: '75'
+        description: 01-95, 2A, 2B or 971-989
+      - name: position
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - active
+          - dissoute
+          - supprimee
+        description: Position filter
+      responses:
+        '200':
+          description: 'Up to 20 matches: rna, titre, position, code_postal, commune, date_creation, siren (when confirmed), fichier_source, score_confiance (0-1) and `correspondance`, which explains the ORDER before the score: `identifiant` (you typed an RNA number), `debut_du_titre` (the title starts with your query — these are always complete) then `mots_similaires` (fuzzy, tolerates typos and inverted words). etages_abandonnes is ALWAYS present ([] = both stages answered): a stage that exceeds the 6s call budget is NAMED there and the answer is still served, with resultats_partiels: true and note_completude — 503 (unbilled) only when nothing at all was found. A generic query matching more than 3000 titles per stage carries the same reserve: each stage ranks a bounded pool. No match = 200, empty list.'
+          content:
+            application/json:
+              example:
+                q: croix rouge
+                filtres:
+                  code_postal: '75'
+                  departement: null
+                  position: null
+                total_results: 2
+                resultats:
+                - rna: W751004076
+                  titre: CROIX ROUGE FRANCAISE
+                  position: active
+                  code_postal: '75694'
+                  commune: Paris 14e
+                  date_creation: '1964-12-30'
+                  siren: '775672272'
+                  fichier_source: waldec
+                  correspondance: debut_du_titre
+                  score_confiance: 0.55
+                etages_abandonnes: []
+                data_freshness: export RNA 2026-09-01 (photo mensuelle, 5 j)
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '503':
+          description: RNA stock not loaded or older than 45 days, or search over its 8 s budget; payment not settled.
+      tags:
+      - Associations
+      operationId: getV1AssociationsRecherche
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

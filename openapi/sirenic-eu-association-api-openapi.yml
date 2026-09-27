@@ -1,0 +1,191 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Association API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Association across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Association
+paths:
+  /v1/association/{rna}:
+    get:
+      summary: French association (loi 1901) profile by RNA number
+      description: 'Official profile of a French association (loi 1901) by RNA number (W + 9), from the RNA register (Ministry of the Interior, monthly): title, purpose and Waldec codes, nature, grouping, position (active/dissolved/deleted), creation, declaration, JO publication and dissolution dates, registered office, website, RUP number as declared, prefecture, and the SIREN when Sirene confirms it (categorie juridique 92xx). Covers associations WITHOUT a SIREN. No officer data. Excludes Alsace-Moselle.'
+      x-price: $0.005
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: rna
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 14
+        example: W751004076
+        description: RNA number (W + 9, e.g. W751004076) or legacy RNA id as published
+      responses:
+        '200':
+          description: Title, purpose and Waldec codes, nature, grouping, position, dates, registered office, website, publication_web_autorisee, RUP as declared, prefecture, siren when Sirene confirms an association, fichier_source (waldec | import), fraicheur.qualite (declaree | inconnue), anomalies, couverture. No officer data.
+          content:
+            application/json:
+              example:
+                rna: W751004076
+                titre: CROIX ROUGE FRANCAISE
+                titre_court: CROIX ROUGE FRANCAISE
+                objet: prévenir et alléger en toutes circonstances les souffrances humaines. Protéger la vie et la santé ainsi qu'à faire respecter la personnes humaine.
+                objet_social_codes:
+                - '017055'
+                - '050000'
+                nature:
+                  code: R
+                  libelle: reconnue_utilite_publique
+                groupement:
+                  code: S
+                  libelle: simple
+                position:
+                  code: A
+                  libelle: active
+                dates:
+                  creation: '1964-12-30'
+                  derniere_declaration: '2025-09-26'
+                  publication_jo: null
+                  dissolution: null
+                siege:
+                  adresse: 98 RUE Didot
+                  code_insee: '75114'
+                  code_postal: '75694'
+                  commune: Paris 14e
+                site_web: null
+                publication_web_autorisee: false
+                rup_mi: 75.000.0001
+                prefecture_gestionnaire: 759S
+                siren: '775672272'
+                siren_origine: identifiant_sirene
+                siret_declare: null
+                fichier_source: waldec
+                fraicheur:
+                  qualite: declaree
+                  derniere_mise_a_jour: '2026-03-28T19:00:02.000Z'
+                  millesime_export: '2026-09-01'
+                anomalies: []
+                data_freshness: export RNA 2026-09-01 (photo mensuelle, 5 j)
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: Unknown identifier in the RNA stock. Nothing is charged.
+        '503':
+          description: RNA stock not loaded or older than 45 days; payment not settled.
+      tags:
+      - Association
+      operationId: getV1AssociationByRna
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+  /v1/association/{rna}/annonces:
+    get:
+      summary: JOAFE notices of a French association (creations, modifications, dissolutions)
+      description: 'Official Journal notices of a French association (JOAFE, DILA) by RNA number: creations, modifications (title, purpose, registered office), dissolutions, corrections — the association equivalent of BODACC notices, most recent first, with issue date, declaration date and prefecture, purpose themes and the PDF file name. Carries `couverture` (first and last loaded issue): no notice inside that window is a fact, not a gap. Weekly issue, loaded every Tuesday.'
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: rna
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 14
+        example: W011006690
+        description: RNA number (W + 9, e.g. W011006690)
+      responses:
+        '200':
+          description: 'Notices most recent first (200 max, tronque flag): identifiant, parution, date_parution, type (creation | modification | dissolution | rectificatif | annulation), forme, departement, declaration date and prefecture, titles, purposes, siege, site_web, themes, fichier_pdf; association when known; couverture {depuis, jusqu_a, parutions}.'
+          content:
+            application/json:
+              example:
+                rna: W011006690
+                association:
+                  titre: MEXIMIEUX EN MOUVEMENT
+                  position: active
+                nombre: 1
+                tronque: false
+                annonces:
+                - identifiant: '202600350001'
+                  parution: '20260035'
+                  date_parution: '2026-09-01'
+                  numero_annonce: 1
+                  type:
+                    code: '1'
+                    libelle: creation
+                  forme: assoLoi1901
+                  departement: '01'
+                  date_declaration: '2026-08-23'
+                  lieu_declaration: Belley
+                  titre: MEXIMIEUX EN MOUVEMENT
+                  ancien_titre: null
+                  nouveau_titre: null
+                  objet: promouvoir, organiser et développer la pratique sportive sous toutes ses formes, dans une optique multisport, à destination de tous les publics
+                  nouvel_objet: null
+                  siege:
+                    adresse: 8 rue du Faubourg
+                    code_postal: 01800
+                    commune: Meximieux
+                  site_web: null
+                  themes:
+                  - code: '011005'
+                    libelle: associations multisports locales
+                  fichier_pdf: JOAFE_PDF_Unitaire_20260035_00001.pdf
+                couverture:
+                  depuis: '2020-01-07'
+                  jusqu_a: '2026-09-01'
+                  parutions: 348
+                data_freshness: JOAFE parution 20260035 (5 j)
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+        '404':
+          description: Unknown in the RNA and without any notice. Nothing is charged.
+        '503':
+          description: JOAFE stock not loaded or older than 14 days; payment not settled.
+      tags:
+      - Association
+      operationId: getV1AssociationByRnaAnnonces
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

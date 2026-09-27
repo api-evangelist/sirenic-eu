@@ -1,0 +1,93 @@
+openapi: 3.2.0
+info:
+  title: Sirenic Eu Regulateurs API
+  version: 1.0.0
+  contact:
+    email: contact@sirenic.eu
+  license:
+    name: 'Data: Licence Ouverte / Open License Etalab 2.0'
+    url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  description: 'Operations tagged Regulateurs across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: https://api.sirenic.eu
+security:
+- {}
+- ApiKeyAuth: []
+- BearerAuth: []
+tags:
+- name: Regulateurs
+paths:
+  /v1/regulateurs/fr/alertes:
+    get:
+      summary: 'French regulator (AMF) alerts: blacklists, PSAN registrations, licensed SGP'
+      description: 'French financial regulator alerts and scam check against the official AMF blacklist: screen a name for unauthorized investment websites, scams and AMF impersonation, and look up PSAN crypto provider registrations and licensed asset management companies (SGP) by name or SIREN. A compliance screening of the regulator blacklists for agents vetting French counterparties in crypto and asset management. Official AMF open data (Licence Ouverte 2.0), refreshed daily.'
+      x-price: $0.01
+      x-payment:
+        protocol: x402
+        network: eip155:8453
+      parameters:
+      - name: nom
+        in: query
+        required: false
+        schema:
+          type: string
+          minLength: 2
+          maxLength: 100
+        example: swisscapitalhub
+        description: Name to screen (site, brand, company) — required unless siren is given
+      - name: siren
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^\d{9}$
+        description: 9-digit SIREN for PSAN/SGP register lookup — required unless nom is given
+      responses:
+        '200':
+          description: Blacklist matches (unauthorized sites, scams, AMF impersonation) with category and listing date, PSAN registrations and SGP authorisations (status, dates, withdrawal reason, activities), plus per-list availability. No match returns empty lists (still 200).
+          content:
+            application/json:
+              example:
+                requete:
+                  nom: null
+                  siren: '552032534'
+                correspondances_liste_noire: []
+                psan: []
+                sgp: []
+                listes:
+                  liste_noire:
+                    disponible: true
+                    entrees: 3382
+                    rafraichie_le: '2026-07-29T07:29:17.796Z'
+                source: AMF — Autorité des marchés financiers, jeux open data officiels sur data.gouv.fr (listes noires, liste blanche PSAN, SGP agréées), Licence Ouverte 2.0, export quotidien
+                disclaimer: 'Aide au criblage par rapprochement de noms sur les listes telles que publiées par l''AMF — ni un avis de conformité ni une décision ; vérifier toute correspondance sur amf-france.org. Une liste `disponible: false` signifie que sa source est momentanément injoignable (jamais un faux « aucune correspondance »).'
+                data_freshness: listes AMF quotidiennes (data.gouv), cache 24 h
+        '400':
+          $ref: '#/components/responses/Reponse400InvalidInput'
+        '402':
+          $ref: '#/components/responses/Reponse402PaymentRequired'
+      tags:
+      - Regulateurs
+      operationId: getV1RegulateursFrAlertes
+      x-operation-id-source: derived
+    servers:
+    - url: https://api.sirenic.eu
+components:
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: 'Sirenic API key (srn_live_…) paying with prepaid credits (1 credit = 1 EUR, same prices as x402). Credits expire 12 months after purchase; calls are charged first to the credits closest to expiry. Optional: without it, the same routes answer 402 with a signable x402 quote. Insufficient balance → 402 {error: credits_insuffisants} WITHOUT a PAYMENT-REQUIRED header. Get a key at /compte.'
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-refined-from:
+- sirenic-eu-openapi.json
+- sirenic-eu-openapi.yml

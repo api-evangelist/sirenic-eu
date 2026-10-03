@@ -1,13 +1,13 @@
 openapi: 3.2.0
 info:
-  title: Sirenic Eu Entreprise API
+  title: Sirenic Entreprise API
   version: 1.0.0
+  description: 'French & European company data, pay-per-call in USDC or EURC — EURC at numeric parity: the same figure as the USDC price, not FX-converted (at the ECB rate of 4 Sept 2026, about 16 % more in dollar terms) via the x402 protocol — or with an API key and prepaid credits (1 credit = 1 EUR, same per-call prices, no wallet).'
   contact:
     email: contact@sirenic.eu
   license:
     name: 'Data: Licence Ouverte / Open License Etalab 2.0'
     url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
-  description: 'Operations tagged Entreprise across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: https://api.sirenic.eu
 security:
@@ -74,8 +74,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySiren
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/etablissements:
     get:
       summary: List establishments (SIRET) of a company
@@ -120,8 +118,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenEtablissements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/alertes:
     get:
       summary: Legal alerts from BODACC (insolvency, deregistration, business sales)
@@ -160,8 +156,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenAlertes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/contentieux:
     get:
       summary: Commercial-court decisions linked to the company (Judilibre open data)
@@ -211,8 +205,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenContentieux
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/accords-collectifs:
     get:
       summary: Company-level collective agreements published on Légifrance (ACCO fund)
@@ -253,8 +245,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenAccordsCollectifs
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/finances:
     get:
       summary: Annual financial data from filed accounts (INPI / Banque de France ratios)
@@ -327,8 +317,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenFinances
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/marches-publics:
     get:
       summary: Public procurement contracts won (official DECP data)
@@ -419,8 +407,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenMarchesPublics
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/concurrents-marches:
     get:
       summary: Rival contractors on the same CPV segments (public procurement)
@@ -469,8 +455,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenConcurrentsMarches
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/documents:
     get:
       summary: List official documents filed at the INPI RNE registry
@@ -516,8 +500,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenDocuments
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/sante:
     get:
       summary: Business-health risk read-out (FR + EN, closed grid, official data only)
@@ -585,8 +567,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenSante
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/capital:
     get:
       summary: Capital / ownership extracted by AI from public INPI articles of association
@@ -632,8 +612,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenCapital
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/pi:
     get:
       summary: Industrial-property portfolio (trademarks, patents, designs) from INPI open data
@@ -697,8 +675,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenPi
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/changements:
     get:
       summary: New BODACC announcements since a date (poll-mode surveillance)
@@ -751,8 +727,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenChangements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/facturation-prep:
     get:
       summary: Prepare an e-invoice for a French recipient (mandate of 1 September 2026)
@@ -815,8 +789,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenFacturationPrep
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/dossier:
     get:
       summary: Full company file in ONE call — pick your blocks, pay only for those
@@ -905,8 +877,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenDossier
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/risques-industriels:
     get:
       summary: 'Industrial-risk profile: classified ICPE facilities, Seveso status, risk…'
@@ -959,8 +929,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenRisquesIndustriels
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/emploi:
     get:
       summary: 'Hiring signals: actively hiring, posting volume, ROME families, pay-range…'
@@ -1017,8 +985,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenEmploi
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/agrements:
     get:
       summary: 'Regulatory authorisations: payment/e-money (EBA), insurance (EIOPA), telecom…'
@@ -1077,8 +1043,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenAgrements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/marches-publics-ue:
     get:
       summary: European public-procurement awards won (TED, identifier-matched)
@@ -1142,8 +1106,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenMarchesPublicsUe
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/financements-ue:
     get:
       summary: 'EU research funding received (CORDIS: Horizon 2020 and Horizon Europe)'
@@ -1217,8 +1179,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenFinancementsUe
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/entreprise/{siren}/lobbying:
     get:
       summary: Lobbying profile from the official HATVP interest-representative register
@@ -1270,8 +1230,6 @@ paths:
       - Entreprise
       operationId: getV1EntrepriseBySirenLobbying
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
 components:
   responses:
     Reponse402PaymentRequired:
@@ -1298,6 +1256,3 @@ components:
       type: http
       scheme: bearer
       description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
-x-refined-from:
-- sirenic-eu-openapi.json
-- sirenic-eu-openapi.yml

@@ -2,12 +2,12 @@ openapi: 3.2.0
 info:
   title: Sirenic Eu API
   version: 1.0.0
+  description: 'French & European company data, pay-per-call in USDC or EURC — EURC at numeric parity: the same figure as the USDC price, not FX-converted (at the ECB rate of 4 Sept 2026, about 16 % more in dollar terms) via the x402 protocol — or with an API key and prepaid credits (1 credit = 1 EUR, same per-call prices, no wallet).'
   contact:
     email: contact@sirenic.eu
   license:
     name: 'Data: Licence Ouverte / Open License Etalab 2.0'
     url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
-  description: 'Operations tagged Eu across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: https://api.sirenic.eu
 security:
@@ -76,8 +76,6 @@ paths:
       - Eu
       operationId: getV1EuRecherche
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/{pays}/{id}:
     get:
       summary: Unified European company profile
@@ -147,8 +145,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseByPaysById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/BE/{id}:
     get:
       summary: BE company profile from its national register
@@ -182,8 +178,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseBEById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CH/{id}:
     get:
       summary: CH company profile from its national register
@@ -217,8 +211,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCHById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/NO/{id}:
     get:
       summary: NO company profile from its national register
@@ -252,8 +244,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseNOById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CZ/{id}:
     get:
       summary: CZ company profile from its national register
@@ -287,8 +277,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCZById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/SK/{id}:
     get:
       summary: SK company profile from its national register
@@ -322,8 +310,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseSKById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/FI/{id}:
     get:
       summary: FI company profile from its national register
@@ -357,8 +343,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseFIById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/PL/{id}:
     get:
       summary: PL company profile from its national register
@@ -392,8 +376,6 @@ paths:
       - Eu
       operationId: getV1EuEntreprisePLById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/EE/{id}:
     get:
       summary: EE company profile from its national register
@@ -427,8 +409,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseEEById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{id}:
     get:
       summary: LV company profile from its national register
@@ -462,8 +442,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CY/{id}:
     get:
       summary: Cypriot company profile (Registrar of Companies DRCOR — monthly snapshot of…
@@ -544,8 +522,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCYById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/SE/{id}:
     get:
       summary: SE company profile from its national register
@@ -579,8 +555,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseSEById
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/ES/{hoja}/actes:
     get:
       summary: Spanish company acts from the BORME gazette (Registro Mercantil, section A), by…
@@ -630,8 +604,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseESByHojaActes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/NO/{id}/comptes:
     get:
       summary: Norwegian annual accounts (Regnskapsregisteret) — latest year live + every year…
@@ -701,8 +673,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseNOByIdComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/NO/{id}/evenements:
     get:
       summary: Norwegian legal events (Enhetsregisteret) — bankruptcy, winding-up, strike-off
@@ -758,8 +728,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseNOByIdEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/NO/{id}/dirigeants:
     get:
       summary: Norwegian company officers and board (Enhetsregisteret roles) — management…
@@ -853,8 +821,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseNOByIdDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/NO/{id}/etablissements:
     get:
       summary: Norwegian company local units (Enhetsregisteret underenheter) — the SIRET-like…
@@ -932,8 +898,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseNOByIdEtablissements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/marches-publics:
     get:
       summary: UK company public procurement (Find a Tender + Contracts Finder — contracts won…
@@ -1008,8 +972,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberMarchesPublics
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/annonces:
     get:
       summary: UK insolvency notices (The Gazette, official journal) — winding-up…
@@ -1067,8 +1029,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberAnnonces
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/dirigeants:
     get:
       summary: UK company officers (Companies House, live) — active directors and secretaries
@@ -1119,8 +1079,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/beneficiaires-effectifs:
     get:
       summary: UK beneficial owners (PSC register, Companies House, live)
@@ -1188,8 +1146,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberBeneficiairesEffectifs
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/insolvabilite:
     get:
       summary: UK company insolvency record (Companies House, live)
@@ -1244,8 +1200,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{regnr}/comptes:
     get:
       summary: Latvian annual accounts (Uzņēmumu reģistrs / VID filings) — every filed fiscal…
@@ -1300,8 +1254,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVByRegnrComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{regnr}/insolvabilite:
     get:
       summary: Latvian company insolvency record (Uzņēmumu reģistrs, daily national photo)
@@ -1352,8 +1304,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVByRegnrInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{regnr}/dirigeants:
     get:
       summary: Latvian company officers (Uzņēmumu reģistrs, refreshed daily)
@@ -1404,8 +1354,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVByRegnrDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{regnr}/evenements:
     get:
       summary: Latvian company legal events (Uzņēmumu reģistrs — liquidations…
@@ -1472,8 +1420,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVByRegnrEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/HR/{oib}:
     get:
       summary: Croatian company profile (Sudski registar — court register, daily snapshot)
@@ -1544,8 +1490,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseHRByOib
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/HR/{oib}/insolvabilite:
     get:
       summary: Croatian company insolvency (Sudski registar — procedure and court decisions)
@@ -1603,8 +1547,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseHRByOibInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/HR/{oib}/evenements:
     get:
       summary: Croatian company court-register entries (Sudski registar — statutory entries…
@@ -1663,8 +1605,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseHRByOibEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/HR/{oib}/comptes:
     get:
       summary: Croatian company annual-accounts filings (Sudski registar — filing metadata per…
@@ -1716,8 +1656,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseHRByOibComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CH/{id}/evenements:
     get:
       summary: Swiss company commercial-register publications (SOGC/SHAB — structured, live…
@@ -1794,8 +1732,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCHByIdEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CH/{id}/insolvabilite:
     get:
       summary: Swiss company bankruptcy publications (SOGC/SHAB — debtor company only, live…
@@ -1859,8 +1795,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCHByIdInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/FI/{id}/evenements:
     get:
       summary: Finnish company trade-register notices (PRH open data — codes and dates since…
@@ -1944,8 +1878,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseFIByIdEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LT/{kodas}:
     get:
       summary: Lithuanian company profile (Juridinių asmenų registras — daily snapshot of…
@@ -2040,8 +1972,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLTByKodas
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LT/{kodas}/comptes:
     get:
       summary: Lithuanian company annual accounts (Juridinių asmenų registras — every filed…
@@ -2115,8 +2045,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLTByKodasComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LT/{kodas}/insolvabilite:
     get:
       summary: Lithuanian company insolvency (JAR legal status and AVNT case files since 2020)
@@ -2184,8 +2112,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLTByKodasInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/IE/{numero}:
     get:
       summary: Irish company file (CRO Open Data — daily complete snapshot, status families…
@@ -2275,8 +2201,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseIEByNumero
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/IE/{numero}/insolvabilite:
     get:
       summary: Irish company insolvency status (CRO register — liquidation, examinership…
@@ -2336,8 +2260,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseIEByNumeroInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CY/{id}/dirigeants:
     get:
       summary: Cypriot company officers (DRCOR — every published mandate, name and role)
@@ -2402,8 +2324,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCYByIdDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/RO/{cui}:
     get:
       summary: Romanian company profile (ONRC, Registrul Comerțului — monthly snapshot of…
@@ -2498,8 +2418,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseROByCui
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/RO/{cui}/dirigeants:
     get:
       summary: Romanian company legal representatives (ONRC — every published mandate, name…
@@ -2554,8 +2472,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseROByCuiDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/RO/{cui}/insolvabilite:
     get:
       summary: Romanian company insolvency (ONRC register statuses and published practitioners)
@@ -2625,8 +2541,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseROByCuiInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/RO/{cui}/comptes:
     get:
       summary: Romanian company annual accounts (Ministry of Finance — every published year…
@@ -2707,8 +2621,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseROByCuiComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/PT/{nipc}/marches-publics:
     get:
       summary: Portuguese company public procurement (Portal BASE — contracts won and issued…
@@ -2792,8 +2704,6 @@ paths:
       - Eu
       operationId: getV1EuEntreprisePTByNipcMarchesPublics
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/PL/{nip}/marches-publics:
     get:
       summary: Polish company public procurement (BZP — contracts won and notices issued…
@@ -2878,8 +2788,6 @@ paths:
       - Eu
       operationId: getV1EuEntreprisePLByNipMarchesPublics
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/ES/{nif}/marches-publics:
     get:
       summary: Spanish company public procurement (PLACSP — contracts won and notices issued…
@@ -2967,8 +2875,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseESByNifMarchesPublics
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{regnr}/marches-publics:
     get:
       summary: Latvian company public procurement (IUB — contracts won and notices issued)
@@ -3041,8 +2947,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVByRegnrMarchesPublics
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/LV/{regnr}/associes:
     get:
       summary: Latvian company members and shareholders (Uzņēmumu reģistrs — corporate holders…
@@ -3122,8 +3026,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseLVByRegnrAssocies
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/EE/{registrikood}/comptes:
     get:
       summary: Estonian annual-report key figures (e-Business Register open data) — every…
@@ -3179,8 +3081,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseEEByRegistrikoodComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/EE/{registrikood}/evenements:
     get:
       summary: Estonian registry rulings (määrused) — striking-off and dissolution warnings…
@@ -3235,8 +3135,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseEEByRegistrikoodEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/EE/{registrikood}/dirigeants:
     get:
       summary: Estonian company officers and governance (e-Business Register) — management…
@@ -3308,8 +3206,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseEEByRegistrikoodDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/EE/{registrikood}/associes:
     get:
       summary: Estonian company members and shareholders (e-Business Register share register)…
@@ -3390,8 +3286,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseEEByRegistrikoodAssocies
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/SE/{orgnr}/comptes:
     get:
       summary: Swedish annual accounts (Bolagsverket iXBRL filings) — every digitally filed…
@@ -3439,8 +3333,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseSEByOrgnrComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/SE/{orgnr}/evenements:
     get:
       summary: Swedish company registry events (Bolagsverket weekly national file)
@@ -3489,8 +3381,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseSEByOrgnrEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/DK/{cvr}/dirigeants:
     get:
       summary: Danish company officers (CVR, Erhvervsstyrelsen, live) — management bodies and…
@@ -3554,8 +3444,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseDKByCvrDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/CZ/{ico}/insolvabilite:
     get:
       summary: Czech company insolvency record (ISIR — Insolvenční rejstřík, since 2008)
@@ -3612,8 +3500,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseCZByIcoInsolvabilite
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/PL/{krs}/evenements:
     get:
       summary: Polish company registry events (KRS daily bulletin) — liquidation, bankruptcy…
@@ -3665,8 +3551,6 @@ paths:
       - Eu
       operationId: getV1EuEntreprisePLByKrsEvenements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/{pays}/{id}/comptes:
     get:
       summary: Company filings list — Belgium (NBB CBSO) and Finland (PRH XBRL filings)
@@ -3726,8 +3610,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseByPaysByIdComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/{pays}/{id}/comptes/{reference}:
     get:
       summary: One annual-account filing — Belgian deposit as filed, or Finnish fiscal year…
@@ -3807,8 +3689,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseByPaysByIdComptesByReference
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/DK/{id}/comptes:
     get:
       summary: Danish company filings list — fiscal years decoded from XBRL annual reports…
@@ -3856,8 +3736,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseDKByIdComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/DK/{id}/comptes/{date_cloture}:
     get:
       summary: One Danish fiscal year decoded from the XBRL annual report
@@ -3919,8 +3797,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseDKByIdComptesByDateCloture
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/SK/{ico}/comptes:
     get:
       summary: Slovak company filings list — fiscal years decoded from structured statements…
@@ -3971,8 +3847,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseSKByIcoComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/SK/{ico}/comptes/{date_cloture}:
     get:
       summary: One Slovak fiscal year decoded from the structured RÚZ filing
@@ -4050,8 +3924,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseSKByIcoComptesByDateCloture
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/comptes:
     get:
       summary: UK company accounts filings list — financial years decoded from iXBRL accounts…
@@ -4100,8 +3972,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberComptes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/GB/{company_number}/comptes/{date_cloture}:
     get:
       summary: One UK financial year decoded from the iXBRL accounts filed at Companies House
@@ -4161,8 +4031,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseGBByCompanyNumberComptesByDateCloture
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/facturation/dossier:
     get:
       summary: Verify a supplier before payment — Belgium & Poland (incl.
@@ -4240,8 +4108,6 @@ paths:
       - Eu
       operationId: getV1EuFacturationDossier
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/{pays}/{id}/marches-publics-ue:
     get:
       summary: European public-procurement awards won by a company of LV, NO, BE, DK, FI, SE…
@@ -4326,8 +4192,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseByPaysByIdMarchesPublicsUe
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/entreprise/{pays}/{id}/transactions-dirigeants:
     get:
       summary: Belgian and German insider dealing (FSMA / BaFin, Art.
@@ -4407,8 +4271,6 @@ paths:
       - Eu
       operationId: getV1EuEntrepriseByPaysByIdTransactionsDirigeants
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
   /v1/eu/agrements:
     get:
       summary: 'EU financial authorisations: ESMA Registers (MiFID), ECB supervised entities…'
@@ -4493,18 +4355,16 @@ paths:
       - Eu
       operationId: getV1EuAgrements
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
 components:
   responses:
     Reponse402PaymentRequired:
       description: Payment required — x402 payment requirements in body (JSON) and headers.
     Reponse503LocalRegister:
       description: 'Local register not yet collected (`collecte_en_cours`), or its snapshot older than that country''s freshness threshold (`photo_perimee` — Sweden: 21 days, matching the guard on Swedish events). A stale snapshot cannot assert a company''s current status. Payment not settled; retrying does not help.'
-    Reponse400InvalidInput:
-      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
     Reponse200UnifiedJson:
       description: 'Same unified JSON schema as /v1/eu/entreprise/{pays}/{id} (see its response example): identity, legal form, normalized status, creation date, head office, VAT, LEI, official register link, data freshness.'
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
@@ -4515,6 +4375,3 @@ components:
       type: http
       scheme: bearer
       description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
-x-refined-from:
-- sirenic-eu-openapi.json
-- sirenic-eu-openapi.yml

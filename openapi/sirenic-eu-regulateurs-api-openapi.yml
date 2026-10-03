@@ -1,13 +1,13 @@
 openapi: 3.2.0
 info:
-  title: Sirenic Eu Regulateurs API
+  title: Sirenic Regulateurs API
   version: 1.0.0
+  description: 'French & European company data, pay-per-call in USDC or EURC — EURC at numeric parity: the same figure as the USDC price, not FX-converted (at the ECB rate of 4 Sept 2026, about 16 % more in dollar terms) via the x402 protocol — or with an API key and prepaid credits (1 credit = 1 EUR, same per-call prices, no wallet).'
   contact:
     email: contact@sirenic.eu
   license:
     name: 'Data: Licence Ouverte / Open License Etalab 2.0'
     url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
-  description: 'Operations tagged Regulateurs across 2 of this provider''s published API definitions: sirenic-eu-openapi.json, sirenic-eu-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: https://api.sirenic.eu
 security:
@@ -70,8 +70,6 @@ paths:
       - Regulateurs
       operationId: getV1RegulateursFrAlertes
       x-operation-id-source: derived
-    servers:
-    - url: https://api.sirenic.eu
 components:
   responses:
     Reponse402PaymentRequired:
@@ -88,6 +86,3 @@ components:
       type: http
       scheme: bearer
       description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
-x-refined-from:
-- sirenic-eu-openapi.json
-- sirenic-eu-openapi.yml

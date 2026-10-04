@@ -142,6 +142,8 @@ apis:
   humanURL: https://api.sirenic.eu/api
   baseURL: https://api.sirenic.eu
   tags:
+  - Associations
+  tags_raw:
   - Association
   properties:
   - type: OpenAPI
@@ -462,6 +464,8 @@ apis:
   humanURL: https://api.sirenic.eu/api
   baseURL: https://api.sirenic.eu
   tags:
+  - EU
+  tags_raw:
   - Eu
   properties:
   - type: OpenAPI
@@ -622,6 +626,8 @@ apis:
   humanURL: https://api.sirenic.eu/api
   baseURL: https://api.sirenic.eu
   tags:
+  - IBAN
+  tags_raw:
   - Iban
   properties:
   - type: OpenAPI
@@ -702,6 +708,8 @@ apis:
   humanURL: https://api.sirenic.eu/api
   baseURL: https://api.sirenic.eu
   tags:
+  - KYB
+  tags_raw:
   - Kyb
   properties:
   - type: OpenAPI

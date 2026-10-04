@@ -135,11 +135,6 @@ paths:
       operationId: getV1KybBySiren
       x-operation-id-source: derived
 components:
-  responses:
-    Reponse402PaymentRequired:
-      description: Payment required — x402 payment requirements in body (JSON) and headers.
-    Reponse400InvalidInput:
-      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
   parameters:
     siren:
       in: path
@@ -150,6 +145,11 @@ components:
         pattern: ^\d{9}$
       example: '552032534'
       description: 9-digit SIREN (Luhn-validated)
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
+    Reponse400InvalidInput:
+      description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

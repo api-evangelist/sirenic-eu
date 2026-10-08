@@ -298,3 +298,30 @@ price_stats:
   min_usd: 0.002
   max_usd: 1.0
   median_usd: 0.02
+x-canonical:
+  generated: '2026-10-08'
+  vocabulary: all/0-working/economics/plans-canonical.yml
+  models:
+  - free
+  - metered
+  - prepaid
+  units: []
+  plans:
+  - name: Pay per call (x402, no account)
+    access: other
+    model: metered
+    model_how: stated
+    units: []
+    periods: []
+  - name: API key + prepaid credits
+    access: other
+    model: prepaid
+    model_how: stated
+    units: []
+    periods: []
+  - name: Free routes
+    access: free
+    model: free
+    model_how: derived
+    units: []
+    periods: []

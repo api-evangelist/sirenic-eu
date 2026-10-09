@@ -1,0 +1,33 @@
+# Front Door AI Index — sirenic-eu — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: sirenic-eu
+  lexicon_version: '1.0'
+  probed_at: '2026-09-25'
+  host: sirenic.eu
+  final_host: api.sirenic.eu
+  ownership: own
+  owner: sirenic-eu
+  shares_host_with: null
+  inherited_from: null
+  alias_of: null
+  verdict: scored
+  score: 20
+  band: 5
+  band_label: prominent
+  host_score: 20
+  density: 1.59
+  words: 12553
+  tiers:
+    agentic: 12
+    core: 0
+    model: 8
+  ambiguous: 30
+  top_terms:
+    agent: 26
+    MCP: 10
+    Claude: 5
+    intelligence: 4
+    ChatGPT: 3
+    llms.txt: 2

@@ -19,6 +19,6 @@
     registered_name: eu.sirenic/sirenic
     register_id: eu.sirenic/sirenic
     detected_by: sweep-agent-tools.py
-    detected: '2026-10-14'
+    detected: '2026-10-15'
   status: not-a-workflow
   arazzo: null

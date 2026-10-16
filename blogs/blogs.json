@@ -1,0 +1,14 @@
+{
+  "repo": "sirenic-eu",
+  "feeds": [
+    {
+      "source": "https://api.sirenic.eu/articles",
+      "feed_url": "https://api.sirenic.eu/articles",
+      "title": "",
+      "saved": 0,
+      "method": "none"
+    }
+  ],
+  "post_count": 0,
+  "fetched": "2026-10-10T13:15:00Z"
+}

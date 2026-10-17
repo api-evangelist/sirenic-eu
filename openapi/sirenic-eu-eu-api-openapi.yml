@@ -4357,14 +4357,14 @@ paths:
       x-operation-id-source: derived
 components:
   responses:
-    Reponse402PaymentRequired:
-      description: Payment required — x402 payment requirements in body (JSON) and headers.
     Reponse503LocalRegister:
       description: 'Local register not yet collected (`collecte_en_cours`), or its snapshot older than that country''s freshness threshold (`photo_perimee` — Sweden: 21 days, matching the guard on Swedish events). A stale snapshot cannot assert a company''s current status. Payment not settled; retrying does not help.'
-    Reponse200UnifiedJson:
-      description: 'Same unified JSON schema as /v1/eu/entreprise/{pays}/{id} (see its response example): identity, legal form, normalized status, creation date, head office, VAT, LEI, official register link, data freshness.'
     Reponse400InvalidInput:
       description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+    Reponse200UnifiedJson:
+      description: 'Same unified JSON schema as /v1/eu/entreprise/{pays}/{id} (see its response example): identity, legal form, normalized status, creation date, head office, VAT, LEI, official register link, data freshness.'
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

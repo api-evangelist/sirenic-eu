@@ -84,10 +84,10 @@ paths:
       x-operation-id-source: derived
 components:
   responses:
-    Reponse402PaymentRequired:
-      description: Payment required — x402 payment requirements in body (JSON) and headers.
     Reponse400InvalidInput:
       description: 'Invalid input. Body: {error, champ, message}. Never charged. / Jamais facturé.'
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

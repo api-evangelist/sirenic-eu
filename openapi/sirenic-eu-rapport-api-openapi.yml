@@ -47,9 +47,6 @@ paths:
       operationId: getV1RapportBySiren
       x-operation-id-source: derived
 components:
-  responses:
-    Reponse402PaymentRequired:
-      description: Payment required — x402 payment requirements in body (JSON) and headers.
   parameters:
     siren:
       in: path
@@ -60,6 +57,9 @@ components:
         pattern: ^\d{9}$
       example: '552032534'
       description: 9-digit SIREN (Luhn-validated)
+  responses:
+    Reponse402PaymentRequired:
+      description: Payment required — x402 payment requirements in body (JSON) and headers.
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

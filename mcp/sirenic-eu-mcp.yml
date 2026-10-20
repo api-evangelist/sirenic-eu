@@ -1475,8 +1475,8 @@ tools_note: Names published by the provider in its own repos; descriptions and i
 crosswalk: mcp/sirenic-eu-tool-crosswalk.yml
 tool_quality:
   tool_count: 116
-  tokens_total: 144106
-  tokens_per_tool_median: 1218
+  tokens_total: 144645
+  tokens_per_tool_median: 1227
   heavy_tools:
   - name: get_european_company_profile
     tokens: 2687
@@ -1488,7 +1488,7 @@ tool_quality:
     tokens: 1821
   - name: get_french_company_intelligence
     tokens: 1648
-  heavy_tool_count: 65
+  heavy_tool_count: 70
   params_total: 400
   params_undescribed: 0
   params_described_pct: 100.0

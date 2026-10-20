@@ -4,15 +4,15 @@ status: published
 source: https://api.sirenic.eu/.well-known/mcp.json (fetched 2026-09-19, saved well-known/sirenic-eu-mcp.json);
   https://api.sirenic.eu/llms.txt; sirenic-eu/sirenic-examples/examples/mcp-setup.md; sirenic-eu/sirenic-gemini-extension/gemini-extension.json;
   RFC 8414/9728 discovery documents
-description: 'Can you safely invoice or pay this company? Verify a supplier before payment in one call — legal identity,
-  VAT checked live against VIES, IBAN form-checked with its bank identified from official registries, and a deterministic
-  ready-to-invoice verdict (French e-invoicing mandate: 1 September 2026; Belgium since 1 January 2026; Poland''s
-  White List account check). Plus French & European company data for AI agents: France in depth (INSEE Sirene /
-  INPI RNE) with profiles, officers, financials, share capital, default scoring, sanctions screening and documents;
-  European search & profiles (Belgium, Switzerland, UK, Norway, Estonia, Latvia, Czechia, Slovakia, Finland, Poland),
-  Spanish registry acts (BORME) and worldwide entities via LEI/GLEIF. Paid per call in USDC or EURC via the x402
-  protocol. Start for free: suggest_company_names turns a French company name into its SIREN (no account, no API
-  key, no payment).'
+description: 'Can you safely invoice or pay this company? Verify a supplier before payment in one call
+  — legal identity, VAT checked live against VIES, IBAN form-checked with its bank identified from official
+  registries, and a deterministic ready-to-invoice verdict (French e-invoicing mandate: 1 September 2026;
+  Belgium since 1 January 2026; Poland''s White List account check). Plus French & European company data
+  for AI agents: France in depth (INSEE Sirene / INPI RNE) with profiles, officers, financials, share
+  capital, default scoring, sanctions screening and documents; European search & profiles (Belgium, Switzerland,
+  UK, Norway, Estonia, Latvia, Czechia, Slovakia, Finland, Poland), Spanish registry acts (BORME) and
+  worldwide entities via LEI/GLEIF. Paid per call in USDC or EURC via the x402 protocol. Start for free:
+  suggest_company_names turns a French company name into its SIREN (no account, no API key, no payment).'
 deployment:
   mode: remote
   endpoint: https://api.sirenic.eu/mcp
@@ -20,14 +20,14 @@ deployment:
   install: null
   package: null
   auth: none
-  auth_note: Anonymous connect and tools/list on /mcp; each tool returns an x402 quote until called with x_payment
-    (signed payment) or api_key (srn_live_). The /mcp/connecteur variant is OAuth 2.0 (authorization_code + PKCE,
-    dynamic client registration, scope mcp) against the account's free quota then credits — this is the RFC 9728
-    protected resource "Sirenic MCP".
+  auth_note: Anonymous connect and tools/list on /mcp; each tool returns an x402 quote until called with
+    x_payment (signed payment) or api_key (srn_live_). The /mcp/connecteur variant is OAuth 2.0 (authorization_code
+    + PKCE, dynamic client registration, scope mcp) against the account's free quota then credits — this
+    is the RFC 9728 protected resource "Sirenic MCP".
   verified: probed
-  verification: GET https://api.sirenic.eu/mcp → 405 application/json (POST-only JSON-RPC endpoint exists); manifest
-    fetched 200 with transport.url naming this exact endpoint; POST tools/list not completed — host refused TCP
-    from the probing IP after the initial burst.
+  verification: GET https://api.sirenic.eu/mcp → 405 application/json (POST-only JSON-RPC endpoint exists);
+    manifest fetched 200 with transport.url naming this exact endpoint; POST tools/list not completed
+    — host refused TCP from the probing IP after the initial burst.
 server:
   name: sirenic
   display_name: Sirenic
@@ -65,10 +65,11 @@ payment:
 client_configs:
   claude_code: claude mcp add --transport http sirenic https://api.sirenic.eu/mcp
   cursor: '{"mcpServers":{"sirenic":{"url":"https://api.sirenic.eu/mcp"}}}'
-  gemini_cli: gemini extensions install https://github.com/sirenic-eu/sirenic-gemini-extension  (uses /mcp/connecteur,
-    OAuth)
+  gemini_cli: gemini extensions install https://github.com/sirenic-eu/sirenic-gemini-extension  (uses
+    /mcp/connecteur, OAuth)
 tool_count: 77
-tool_count_source: gemini-extension.json (2026-09-03) — "77 tools"; examples/mcp-setup.md (July 2026) listed 25
+tool_count_source: gemini-extension.json (2026-09-03) — "77 tools"; examples/mcp-setup.md (July 2026)
+  listed 25
 tools:
 - name: search_french_companies
   category: search
@@ -154,7 +155,42 @@ tools:
 - name: get_french_company_intelligence
   category: kyb
   rest: /v1/intelligence/{siren}
-tools_note: Names published by the provider in its own repos; descriptions and inputSchema require a live tools/list,
-  which was not captured (see deployment.verification). Every tool accepts optional x_payment and api_key arguments.
-  suggest_company_names and detect_company_identifiers are free.
+tools_note: Names published by the provider in its own repos; descriptions and inputSchema require a live
+  tools/list, which was not captured (see deployment.verification). Every tool accepts optional x_payment
+  and api_key arguments. suggest_company_names and detect_company_identifiers are free.
 crosswalk: mcp/sirenic-eu-tool-crosswalk.yml
+tool_quality:
+  tool_count: 116
+  tokens_total: 144106
+  tokens_per_tool_median: 1218
+  heavy_tools:
+  - name: get_european_company_profile
+    tokens: 2687
+  - name: query_french_companies
+    tokens: 2485
+  - name: search_european_companies
+    tokens: 2146
+  - name: get_french_company_identity_batch
+    tokens: 1821
+  - name: get_french_company_intelligence
+    tokens: 1648
+  heavy_tool_count: 65
+  params_total: 400
+  params_undescribed: 0
+  params_described_pct: 100.0
+  tools_with_undescribed_params: 0
+  tools_annotated: 116
+  annotated_pct: 100.0
+  state_changing_unhinted: []
+  tools_missing_schema: 0
+  short_descriptions: 0
+  duplicate_descriptions: 0
+  duplicate_names: 0
+  nonportable_names: []
+  output_schema_count: 112
+  token_estimate: chars/3.6 of each compact tool definition
+  source: mcp/sirenic-eu-mcp-tools.json
+  measured: '2026-10-20'
+  scored: false
+  note: Facts from the saved tools/list capture (mcp_tool_quality.py); recorded, not scored. Checks learned
+    from Glimind's agent-readiness audit.

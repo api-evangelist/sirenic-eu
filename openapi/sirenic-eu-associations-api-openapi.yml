@@ -109,3 +109,9 @@ components:
       type: http
       scheme: bearer
       description: 'The same srn_live_… API key sent as Authorization: Bearer. A bearer value that is not an srn_ key is ignored (x402 flow unchanged).'
+x-provenance:
+  method: harvested
+  publisher: Sirenic
+  source: https://api.sirenic.eu/openapi.json
+  note: split by refine-openapis from the provider's own published document, verified by fetch (openapi/_original/*.fetch.json);
+    stamped by stamp-openapi-provenance.py (roadmap#793)
